@@ -125,8 +125,14 @@
   <!-- ===== Tab 2: China Travel Details ===== -->
   <div id="tabTravelContent" class="hidden">
     <!-- KPI Summary Cards -->
-    <div id="travelKpiRow" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3.5 mb-3.5"></div>
+    <div id="travelKpiRow" class="grid grid-cols-1 sm:grid-cols-2 gap-3.5 mb-3.5"></div>
     <div id="travelActivityCard" class="bg-white border border-bordc rounded-2xl px-5 py-4.5 pt-5 shadow-sm mb-6"></div>
+
+    <!-- Filter indicator (activity-type filter from the summary card) -->
+    <div id="travelFilterIndicator" class="hidden items-center gap-3 bg-accentsoft border border-[#C9DDB2] rounded-xl px-4 py-2.5 mb-4 text-sm text-accent">
+      <span id="travelFilterLabel" class="font-medium"></span>
+      <button onclick="clearTravelFilter()" class="ml-auto font-bold text-accent hover:text-accentdark">✕ ล้างตัวกรอง</button>
+    </div>
 
     <!-- Search -->
     <input id="travelSearchBox" class="w-full px-5 py-3.5 border border-bordc rounded-full text-[15px] bg-white mb-4 focus:outline-none focus:ring-2 focus:ring-accentsoft"
@@ -897,6 +903,26 @@ function buildTravelGroups(data){
 let openTravelGroupKey = null; // accordion: มีกลุ่มที่ขยายได้ทีละ 1 กลุ่มเท่านั้น (คลิกกลุ่มอื่นจะหุบกลุ่มเดิมอัตโนมัติ)
 
 let travelActivityChart = null;
+let travelTypeFilter = null; // ประเภทกิจกรรมที่กำลังกรองตาราง (มาจากการคลิกชาร์ต/legend ในการ์ดสรุป), null = ไม่กรอง
+
+/** คลิกกิจกรรมในชาร์ต/legend ของการ์ดสรุป -> กรองตารางด้านล่างให้เหลือเฉพาะ
+    สถานศึกษาที่มีผู้เดินทางในกิจกรรมนั้น แล้วเลื่อนหน้าจอลงไปที่ตารางอัตโนมัติ */
+window.filterTravelByType = function(type){
+  travelTypeFilter = type;
+  const ind = document.getElementById('travelFilterIndicator');
+  document.getElementById('travelFilterLabel').textContent = 'กำลังกรอง: ' + type;
+  ind.classList.remove('hidden');
+  ind.classList.add('flex');
+  renderTravelTab(chinaTravelData);
+  document.getElementById('travelSearchBox').scrollIntoView({ behavior:'smooth', block:'start' });
+};
+window.clearTravelFilter = function(){
+  travelTypeFilter = null;
+  const ind = document.getElementById('travelFilterIndicator');
+  ind.classList.add('hidden');
+  ind.classList.remove('flex');
+  renderTravelTab(chinaTravelData);
+};
 
 function renderTravelKpis(data){
   const totalStudents = data.reduce((s,t)=>s+num(t.studentCount),0);
@@ -911,8 +937,7 @@ function renderTravelKpis(data){
   // เพื่อให้ทุกประเภทกิจกรรมมีสีของตัวเองแยกจากกันชัดเจน ไม่ตกไปเป็นสีเทาเหมือนกันหมด
   const typeColors = colorsForLabels(typeLabels);
 
-  // การ์ดตัวเลขล้วน: ใช้ร่วมกันทั้ง 3 ใบที่ไม่ใช่การ์ดหลัก เพื่อให้น้ำหนักภาพเท่ากันทุกใบ
-  // iconBg/iconInk แยกตามหมวดหมู่ (น้ำเงิน = สถาบัน, ส้ม = กิจกรรม) ให้สอดคล้องกับแท็บภาพรวม
+  // การ์ดตัวเลขล้วน: เหลือ 2 ใบ (สถาบันไทย/จีน) เพราะยอดผู้เดินทางย้ายไปอยู่ในการ์ดชาร์ตสรุปด้านล่างแทน
   const kpiBox = (icon, label, value, unit, iconBg, iconInk) => `
     <div class="relative bg-white border border-bordc rounded-2xl px-5 py-4.5 pt-5 shadow-sm">
       <div class="absolute top-4 right-4"><span class="flex-none w-10 h-10 rounded-xl ${iconBg} ${iconInk} flex items-center justify-center"><i data-lucide="${icon}" class="w-5 h-5"></i></span></div>
@@ -921,25 +946,22 @@ function renderTravelKpis(data){
     </div>`;
 
   document.getElementById('travelKpiRow').innerHTML =
-    // การ์ดหลัก (hero): ใช้พื้นหลัง herobg เด่นกว่าใบอื่น เพราะเป็นตัวเลขสรุปสำคัญที่สุดของแท็บนี้
-    `<div class="relative bg-herobg border border-herobd rounded-2xl px-5 py-4.5 pt-5 shadow-sm">
-      <div class="absolute top-4 right-4"><span class="flex-none w-10 h-10 rounded-xl bg-white/60 text-amberink flex items-center justify-center"><i data-lucide="users" class="w-5 h-5"></i></span></div>
-      <p class="text-sm text-inksoft font-medium mb-2.5 pr-12">นักศึกษาเดินทางทั้งหมด</p>
-      <p class="text-3xl font-bold text-[#0F172A]">${fmt(totalStudents)}<span class="text-sm font-medium text-inksoft ml-1">คน</span></p>
-    </div>` +
     kpiBox('school', 'วิทยาลัยไทยที่เข้าร่วม', totalThaiColleges, 'แห่ง', 'bg-blue-100', 'text-blue-800') +
-    kpiBox('landmark', 'วิทยาลัยจีนที่เข้าร่วม', totalCnColleges, 'แห่ง', 'bg-blue-100', 'text-blue-800') +
-    kpiBox('activity', 'ประเภทกิจกรรม', typeLabels.length, 'ประเภท', 'bg-orange-100', 'text-orange-800');
+    kpiBox('landmark', 'วิทยาลัยจีนที่เข้าร่วม', totalCnColleges, 'แห่ง', 'bg-blue-100', 'text-blue-800');
   lucide.createIcons();
 
-  // สรุปประเภทกิจกรรม: แยกออกมาเป็นการ์ดของตัวเองแทนการอัดไว้ในแถว KPI
-  // เพื่อไม่ให้ความหนาแน่นของข้อมูลในการ์ดนี้ต่างจากอีก 4 ใบที่มีแค่ตัวเลขเดี่ยว
+  // การ์ดสรุปจำนวนผู้เรียนที่เดินทาง: โดนัทชาร์ตอยู่กึ่งกลางการ์ด มียอดรวมผู้เดินทางอยู่กึ่งกลางวงชาร์ต
+  // แต่ละแถวใน legend และแต่ละชิ้นในชาร์ตคลิกได้ เพื่อกรองตารางด้านล่างตามประเภทกิจกรรมนั้น
   document.getElementById('travelActivityCard').innerHTML = `
-    <p class="text-sm text-inksoft font-medium mb-3">สรุปประเภทกิจกรรม</p>
-    <div class="flex items-center gap-5">
-      <div class="w-24 h-24 flex-none"><canvas id="travelActivityChart"></canvas></div>
-      <div class="flex-1 flex flex-col gap-1.5">
-        ${typeLabels.map((l,i)=>`<div class="flex items-center gap-2 text-sm text-inksoft"><span class="w-2.5 h-2.5 rounded-full flex-none" style="background:${typeColors[i]}"></span><span class="truncate">${esc(l)}</span><span class="ml-auto font-bold text-ink">${fmt(typeCount[l])} คน</span></div>`).join('')}
+    <p class="text-sm text-inksoft font-medium mb-4 text-center">สรุปจำนวนผู้เรียนที่เดินทาง</p>
+    <div class="flex flex-col items-center gap-4">
+      <div class="w-40 h-40"><canvas id="travelActivityChart"></canvas></div>
+      <div class="w-full max-w-sm flex flex-col gap-1">
+        ${typeLabels.map((l,i)=>`
+          <button type="button" onclick='filterTravelByType(${JSON.stringify(l)})' class="w-full flex items-center justify-between gap-2 py-2 px-2 text-left hover:bg-black/5 rounded-lg transition">
+            <span class="flex items-center gap-2 text-sm text-inksoft min-w-0"><span class="w-2.5 h-2.5 rounded-full flex-none" style="background:${typeColors[i]}"></span><span class="truncate">${esc(l)}</span></span>
+            <span class="flex-none font-bold text-ink text-sm">${fmt(typeCount[l])} คน</span>
+          </button>`).join('')}
       </div>
     </div>`;
 
@@ -947,7 +969,17 @@ function renderTravelKpis(data){
   travelActivityChart = new Chart(document.getElementById('travelActivityChart'), {
     type:'doughnut',
     data:{ labels:typeLabels, datasets:[{ data:typeLabels.map(l=>typeCount[l]), backgroundColor:typeColors, borderWidth:0 }] },
-    options:{ cutout:'65%', plugins:{ legend:{display:false}, datalabels:{display:false} } }
+    options:{
+      cutout:'65%',
+      plugins:{
+        legend:{display:false},
+        datalabels:{display:false},
+        centerText:{ display:true, text:fmt(totalStudents), subtext:'คนเดินทาง', color:'#0F172A' }
+      },
+      onClick:(evt, els)=>{ if(!els.length) return; filterTravelByType(typeLabels[els[0].index]); },
+      onHover:(evt, els)=>{ evt.native.target.style.cursor = els.length ? 'pointer' : 'default'; }
+    },
+    plugins:[centerTextPlugin]
   });
 }
 
@@ -1047,7 +1079,9 @@ window.toggleTravelGroup = function(gi){
 
 function renderTravelTab(data){
   renderTravelKpis(data);
-  const allGroups = buildTravelGroups(data);
+  // กรองตามประเภทกิจกรรมที่เลือกจากการ์ดสรุป (ถ้ามี) ก่อนสร้างกลุ่มตาราง — การ์ด KPI/ชาร์ตด้านบนยังคงอิง data เต็มเสมอ
+  const baseData = travelTypeFilter ? data.filter(t => (t.travelType || 'ไม่ระบุ') === travelTypeFilter) : data;
+  const allGroups = buildTravelGroups(baseData);
   const q = document.getElementById('travelSearchBox').value.trim().toLowerCase();
   const forceExpandKeys = new Set();
   let visibleGroups = allGroups;
