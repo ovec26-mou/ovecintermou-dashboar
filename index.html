@@ -1,0 +1,1332 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>ฐานข้อมูลความร่วมมือ สอศ. – สาธารณรัฐประชาชนจีน</title>
+
+<script src="https://cdn.tailwindcss.com"></script>
+<script>
+  tailwind.config = {
+    theme: {
+      extend: {
+        colors: {
+          cream: '#F5F1E6',
+          ink: '#242420',
+          inksoft: '#54534C',
+          bordc: '#E2DDCE',
+          headbg: '#E8EFDC',
+          accent: '#2F5A16',
+          accentdark: '#24450F',
+          accentsoft: '#DCEACB',
+          herobg: '#FCF0CE',
+          herobd: '#EBD79A',
+          amberink: '#7A4E0A',
+          ambersoft: '#F5DFB0',
+          redink: '#7A2323',
+          redsoft: '#F3D3D3',
+        },
+        fontFamily: {
+          sans: ['-apple-system', 'Segoe UI', 'Sarabun', 'Arial', 'sans-serif'],
+        },
+        borderRadius: { '2xl': '16px' },
+      }
+    }
+  };
+</script>
+
+<script src="https://unpkg.com/lucide@latest"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/PapaParse/5.4.1/papaparse.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.0/chart.umd.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/chartjs-plugin-datalabels/2.2.0/chartjs-plugin-datalabels.min.js"></script>
+
+<style>
+  /* Small bits Tailwind utility classes can't express cleanly */
+  html { scroll-behavior: smooth; }
+  body { word-break: normal; overflow-wrap: break-word; line-break: strict; }
+  #modalBody canvas { max-height: 320px; }
+  .fade-in { animation: fadeIn .15s ease-out; }
+  @keyframes fadeIn { from { opacity: 0; transform: translateY(6px); } to { opacity: 1; transform: translateY(0); } }
+  ::-webkit-scrollbar { width: 8px; height: 8px; }
+  ::-webkit-scrollbar-thumb { background: #D8D3C2; border-radius: 8px; }
+  @media (prefers-reduced-motion: reduce) {
+    html { scroll-behavior: auto; }
+    .fade-in { animation: none; }
+  }
+</style>
+</head>
+<body class="font-sans bg-cream text-ink text-base">
+<div class="max-w-[1180px] mx-auto px-5 pt-8 pb-20">
+
+  <p class="text-sm text-inksoft tracking-wide mb-1">สำนักงานคณะกรรมการการอาชีวศึกษา</p>
+  <h1 class="text-[26px] sm:text-[28px] font-bold mb-1.5 leading-snug">ฐานข้อมูลความร่วมมือ สอศ. – สาธารณรัฐประชาชนจีน</h1>
+  <p id="pageSubtitle" class="text-[15px] text-inksoft mb-7">ภาพรวมความร่วมมือทางวิชาการระหว่างสถานศึกษาไทยและหน่วยงานจีน</p>
+
+  <!-- ===== Row 1: Always-visible top KPI cards (Overview tab only) ===== -->
+  <div id="kpiRow1" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3.5 mb-6"></div>
+
+  <!-- ===== Tab Navigation ===== -->
+  <div id="tabBar" class="flex gap-1.5 border-b border-bordc mb-6">
+    <button id="tabBtnOverview" onclick="switchTab('overview')"
+      class="tab-btn px-4 sm:px-5 py-3 text-[13px] sm:text-sm font-bold border-b-2 -mb-px transition text-accent border-accent">
+      ภาพรวมความร่วมมือ (Overview)
+    </button>
+    <button id="tabBtnTravel" onclick="switchTab('travel')"
+      class="tab-btn px-4 sm:px-5 py-3 text-[13px] sm:text-sm font-bold border-b-2 -mb-px transition text-inksoft border-transparent hover:text-ink">
+      ข้อมูลการเดินทางศึกษาต่อและฝึกอบรม ณ ประเทศจีน
+    </button>
+  </div>
+
+  <!-- ===== Tab 1: Overview (banner-driven UI, each banner opens a full-screen modal) ===== -->
+  <div id="tabOverviewContent">
+    <p class="text-xs font-bold uppercase tracking-wider text-inksoft mb-2.5">ข้อมูลเชิงลึก <span class="font-normal normal-case">— แตะเพื่อดูรายละเอียดและกรองตาราง</span></p>
+    <div id="bannerGrid" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 mb-8"></div>
+
+    <!-- ===== Filter indicator ===== -->
+    <div id="filterIndicator" class="hidden items-center gap-3 bg-accentsoft border border-[#C9DDB2] rounded-xl px-4 py-2.5 mb-4 text-sm text-accent">
+      <span id="filterLabel" class="font-medium"></span>
+      <button onclick="clearFilter()" class="ml-auto font-bold text-accent hover:text-accentdark">✕ ล้างตัวกรอง</button>
+    </div>
+
+    <!-- ===== Search ===== -->
+    <input id="searchBox" class="w-full px-5 py-3.5 border border-bordc rounded-full text-[15px] bg-white mb-4 focus:outline-none focus:ring-2 focus:ring-accentsoft"
+           placeholder="ค้นหาชื่อเอกสาร / วิทยาลัย / มณฑล / บริษัท..." />
+
+    <!-- ===== Data table (desktop/tablet) + card list (mobile) ===== -->
+    <div class="w-full overflow-x-auto space-y-4">
+      <!-- Mobile card list: shown below md, hidden at md and up -->
+      <div id="mobileCards" class="block md:hidden">
+        <p class="text-center text-inksoft p-8 text-sm">กำลังโหลดข้อมูล...</p>
+      </div>
+
+      <!-- Desktop/tablet table: hidden below md, shown as table at md and up -->
+      <div class="hidden md:block border border-bordc rounded-2xl overflow-hidden bg-white">
+        <table class="w-full min-w-[800px] border-collapse table-fixed">
+          <thead>
+            <tr class="bg-headbg">
+              <th class="w-7"></th>
+              <th class="w-[60px] text-left align-top whitespace-nowrap text-[13px] font-bold text-inksoft p-3">รหัส</th>
+              <th class="w-14 text-left align-top whitespace-nowrap text-[13px] font-bold text-inksoft p-3">เอกสาร</th>
+              <th class="text-left align-top text-[13px] font-bold text-inksoft p-3">ความร่วมมือ</th>
+              <th class="text-left align-top text-[13px] font-bold text-inksoft p-3">หน่วยงานไทย</th>
+              <th class="text-left align-top text-[13px] font-bold text-inksoft p-3">หน่วยงานต่างประเทศ</th>
+              <th class="w-[70px] text-left align-top whitespace-nowrap text-[13px] font-bold text-inksoft p-3">ประเทศ</th>
+              <th class="w-[130px] text-left align-top whitespace-nowrap text-[13px] font-bold text-inksoft p-3">สถานะ</th>
+            </tr>
+          </thead>
+          <tbody id="tbody">
+            <tr><td colspan="8" class="text-center text-inksoft p-10">กำลังโหลดข้อมูล...</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+
+  <!-- ===== Tab 2: China Travel Details ===== -->
+  <div id="tabTravelContent" class="hidden">
+    <!-- KPI Summary Cards -->
+    <div id="travelKpiRow" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3.5 mb-3.5"></div>
+    <div id="travelActivityCard" class="bg-white border border-bordc rounded-2xl px-5 py-4.5 pt-5 shadow-sm mb-6"></div>
+
+    <!-- Search -->
+    <input id="travelSearchBox" class="w-full px-5 py-3.5 border border-bordc rounded-full text-[15px] bg-white mb-4 focus:outline-none focus:ring-2 focus:ring-accentsoft"
+           placeholder="ค้นหาวิทยาลัยไทยหรือสถานศึกษาจีน..." />
+
+    <!-- Data table (desktop/tablet) + card list (mobile) -->
+    <div class="w-full overflow-x-auto space-y-4">
+      <!-- Mobile card list -->
+      <div id="travelMobileCards" class="block md:hidden">
+        <p class="text-center text-inksoft p-8 text-sm">กำลังโหลดข้อมูล...</p>
+      </div>
+
+      <!-- Desktop/tablet table -->
+      <div class="hidden md:block border border-bordc rounded-2xl overflow-hidden bg-white">
+        <table class="w-full min-w-[680px] border-collapse table-fixed">
+          <thead>
+            <tr class="bg-headbg">
+              <th class="w-[64px] text-center align-top whitespace-nowrap text-[13px] font-bold text-inksoft p-3">ลำดับ</th>
+              <th class="text-left align-top text-[13px] font-bold text-inksoft p-3">วิทยาลัยไทย</th>
+              <th class="w-[150px] text-center align-top text-[13px] font-bold text-inksoft p-3">จำนวนผู้เรียนรวม</th>
+              <th class="w-[210px] text-center align-top text-[13px] font-bold text-inksoft p-3">รายละเอียด</th>
+            </tr>
+          </thead>
+          <tbody id="travelTbody">
+            <tr><td colspan="4" class="text-center text-inksoft p-10">กำลังโหลดข้อมูล...</td></tr>
+          </tbody>
+          <tfoot>
+            <tr class="border-t-2 border-bordc bg-headbg/60">
+              <td colspan="2" class="p-3 text-right text-[13px] font-bold text-inksoft">รวมทั้งหมด <span id="travelFooterColleges">0</span> วิทยาลัย</td>
+              <td class="p-3 text-center text-[15px] font-bold text-accent" id="travelFooterStudents">0</td>
+              <td class="p-3"></td>
+            </tr>
+          </tfoot>
+        </table>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ===== Full-screen modal overlay (shared by every banner) ===== -->
+<div id="modalOverlay" class="hidden fixed inset-0 z-50">
+  <div class="absolute inset-0 bg-black/55" onclick="closeModal()"></div>
+  <div class="absolute inset-0 flex items-start sm:items-center justify-center overflow-y-auto p-0 sm:p-6">
+    <div class="fade-in relative w-full sm:max-w-2xl bg-cream min-h-full sm:min-h-0 sm:rounded-2xl shadow-2xl">
+      <div class="flex items-start justify-between gap-4 px-5 sm:px-6 py-4 border-b border-bordc sticky top-0 bg-cream sm:rounded-t-2xl z-10">
+        <div>
+          <h3 id="modalTitle" class="font-bold text-lg leading-snug"></h3>
+          <p id="modalSubtitle" class="text-xs text-inksoft mt-0.5"></p>
+        </div>
+        <button onclick="closeModal()" aria-label="ปิด" class="flex-none w-9 h-9 rounded-full flex items-center justify-center text-inksoft hover:bg-black/5">
+          <i data-lucide="x" class="w-5 h-5"></i>
+        </button>
+      </div>
+      <div id="modalBody" class="p-5 sm:p-6"></div>
+    </div>
+  </div>
+</div>
+
+<script>
+const CSV_URL = "https://docs.google.com/spreadsheets/d/e/2PACX-1vR1QHqqhuGhgzsC1IkHke8mQtLuKjhHhhxWGZnHg-xIvYN0memFprQn8sSm7qYQTWNuPiR-vlUzgcbH/pub?gid=2055511805&single=true&output=csv";
+const DEFAULT_COUNTRY = "จีน";
+
+const COL = {
+  no:0, name:1, docType:2,
+  partyAth:3, provA:4, typeA:5,
+  partyBth:6, provB:7, typeB:8,
+  partyAch:9, mzA:10, typeAch:11,
+  partyBch:12, mzB:13, typeBch:14,
+  signDate:15, duration:16, status:17, level:18, pdf:19,
+  activity:20, approved:21, eduLevel:22, subject:23,
+  puvch:24, puvs:25, pubtri:26,
+  scholarShort:27, scholarLong:28, dual:29, internCn:30, internCnTh:31, bilateral:32,
+  hsk1:33, hsk2:34, hsk3:35, hsk4:36, hsk5:37, hsk6:38, noSkill:39,
+  workCnTh:40, workCn:41, further:42,
+  teacherCn:43, teacherTh:44
+};
+
+const PDF_ICON = '<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path><polyline points="14 2 14 8 20 8"></polyline><line x1="12" y1="18" x2="12" y2="12"></line><line x1="9" y1="15" x2="15" y2="15"></line></svg>';
+
+/** ----- Student China Travel Tracking (mock dataset) -----
+    Standalone dataset (not sourced from the CSV) describing students who
+    travel to China for study/training under the cooperation agreements.
+    Replace with a real feed (CSV/API) later; the modal/render code below
+    only depends on the field names, not on this being mock data. */
+const CSV_URL_TRAVEL = "https://docs.google.com/spreadsheets/d/e/2PACX-1vR1QHqqhuGhgzsC1IkHke8mQtLuKjhHhhxWGZnHg-xIvYN0memFprQn8sSm7qYQTWNuPiR-vlUzgcbH/pub?gid=558529431&single=true&output=csv";
+let chinaTravelData = []; // เติมจริงหลัง fetch CSV เสร็จ (ดู Papa.parse ท้ายไฟล์)
+let CHINA_TRAVEL_TOTAL_STUDENTS = 0;
+
+/** ----- helpers ----- */
+
+function num(v){ const n = parseFloat(v); return isNaN(n) ? 0 : n; }
+function fmt(n){ return Number(n||0).toLocaleString('en-US'); }
+/** กัน HTML/script หลุดเข้ามาจากข้อความในชีต (ชื่อหน่วยงาน, สาขาวิชา ฯลฯ) ก่อนแทรกด้วย innerHTML */
+function esc(s){
+  if(s === null || s === undefined) return '';
+  return String(s).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+}
+
+function parseSignDate(s){
+  if(!s) return null;
+  const m = String(s).trim().match(/^(\d{1,2})\/(\d{1,2})\/(\d{4})$/);
+  if(!m) return null;
+  const a = parseInt(m[1],10), b = parseInt(m[2],10), y = parseInt(m[3],10);
+  const month = a > 12 ? b : a;
+  const day = a > 12 ? a : b;
+  return { day, month, year: y };
+}
+function formatDate(s){
+  const d = parseSignDate(s);
+  if(!d) return s || '-';
+  const pad = n => String(n).padStart(2,'0');
+  return pad(d.day) + '/' + pad(d.month) + '/' + d.year;
+}
+function signYear(s){
+  const d = parseSignDate(s);
+  return d ? String(d.year) : null;
+}
+
+function statusMeta(s){
+  if(s === 'ใกล้หมดอายุ') return {cls:'bg-ambersoft text-amberink', dot:'bg-amberink', label:s};
+  if(s === 'หมดอายุ') return {cls:'bg-redsoft text-redink', dot:'bg-redink', label:s};
+  if(s === 'ปกติ') return {cls:'bg-[#CDE6B4] text-[#1E4A0C]', dot:'bg-accent', label:s};
+  return {cls:'bg-[#E7E4D8] text-inksoft', dot:'bg-inksoft', label:'-'};
+}
+
+function orgIsPriv(type){ return (type || '').indexOf('เอกชน') !== -1; }
+function orgBadge(name, type){
+  if(!name) return '';
+  const priv = orgIsPriv(type);
+  const badgeCls = priv
+    ? 'bg-amber-100 text-amber-900 border border-amber-300'
+    : 'bg-blue-50 text-blue-800 border border-blue-100';
+  return '<div class="flex items-baseline gap-1.5 flex-wrap mb-1.5 last:mb-0">' +
+    (type ? '<span class="inline-block flex-none text-[11px] font-bold px-2 py-0.5 rounded-full whitespace-nowrap ' + badgeCls + '">' + esc(type) + '</span>' : '') +
+    '<span class="text-sm leading-snug">' + esc(name) + '</span></div>';
+}
+function scopePill(text){
+  return '<span class="inline-block text-xs font-semibold px-2.5 py-1 rounded-full bg-fuchsia-50 text-fuchsia-900 border border-fuchsia-100">' + esc(text) + '</span>';
+}
+function splitMulti(v){
+  return (v || '').split(/[,\n]/).map(s => s.trim()).filter(Boolean);
+}
+function statTable(pairs){
+  return '<table class="w-full mt-1.5">' + pairs.map(p => {
+    const zero = num(p[1]) === 0;
+    return '<tr class="border-t border-bordc first:border-t-0 ' + (zero ? 'opacity-50' : '') + '">' +
+      '<td class="py-1.5 text-sm text-inksoft">' + p[0] + '</td>' +
+      '<td class="py-1.5 text-[15px] font-bold text-right w-14">' + num(p[1]) + '</td></tr>';
+  }).join('') + '</table>';
+}
+
+/** ----- chart theming ----- */
+Chart.register(ChartDataLabels);
+Chart.defaults.set('plugins.datalabels', { display:false });
+Chart.defaults.font.family = "-apple-system, 'Segoe UI', Arial, sans-serif";
+
+function contrastTextColor(hex){
+  const c = (hex||'#000000').replace('#','');
+  const r = parseInt(c.substr(0,2),16), g = parseInt(c.substr(2,2),16), b = parseInt(c.substr(4,2),16);
+  const lum = (0.299*r + 0.587*g + 0.114*b) / 255;
+  return lum > 0.58 ? '#242420' : '#FFFFFF';
+}
+const LABEL_COLOR_MAP = {};
+const COLOR_PALETTE = ['#2F7A3D','#1E56A0','#D97706','#7E22CE','#B91C1C','#0F766E','#BE185D','#78350F','#4338CA','#15803D','#B45309','#6D28D9','#0369A1','#A21CAF'];
+function colorsForLabels(labels){
+  return labels.map(lab => {
+    if(lab === 'อื่นๆ' || lab === 'อื่น ๆ') return '#9C9A8F';
+    if(!(lab in LABEL_COLOR_MAP)){
+      const idx = Object.keys(LABEL_COLOR_MAP).length % COLOR_PALETTE.length;
+      LABEL_COLOR_MAP[lab] = COLOR_PALETTE[idx];
+    }
+    return LABEL_COLOR_MAP[lab];
+  });
+}
+function hskColors(){ return ['#DCEACB','#B9D9A0','#8FC46E','#6DA84A','#4A8A2E','#2F5A16']; }
+
+/** Dedicated, position-based (not history-based) palette just for the
+    "activity" donut. colorsForLabels()'s shared LABEL_COLOR_MAP assigns
+    colors in the order labels are FIRST seen across the whole session, so
+    two categories can land 9 slots apart and get near-duplicate hues from
+    the wrap-around (e.g. both landing on a green, or both on a purple).
+    Indexing straight into this list by rank avoids that: whichever
+    activity ends up #1 vs #2 always gets two clearly different hues. */
+const ACTIVITY_COLORS = ['#2F7A3D','#1E56A0','#D97706','#7E22CE','#B91C1C','#0F766E','#BE185D','#4338CA','#A16207'];
+function activityColors(labels){
+  let i = 0;
+  return labels.map(lab => (lab === 'อื่น ๆ' || lab === 'อื่นๆ') ? '#9C9A8F' : ACTIVITY_COLORS[i++ % ACTIVITY_COLORS.length]);
+}
+/** One legend row for the activity modal: dot + name on the left, count
+    ("รายการ") + percentage on the right — e.g. "ทวิวุฒิ | 43 รายการ (13%)". */
+function activityLegendRow(label, value, pctText, color, onClick){
+  return `
+    <button onclick="${onClick}" class="w-full flex items-center justify-between gap-3 py-2.5 px-1 text-left hover:bg-black/5 rounded-lg transition">
+      <span class="flex items-center gap-2 text-sm min-w-0"><span class="flex-none w-2.5 h-2.5 rounded-sm" style="background:${color}"></span><span class="truncate">${label}</span></span>
+      <span class="flex-none text-[13px] whitespace-nowrap"><span class="font-bold text-[15px] text-[#0F172A]">${fmt(value)}</span> <span class="text-inksoft">รายการ (${pctText})</span></span>
+    </button>`;
+}
+
+const centerTextPlugin = {
+  id: 'centerText',
+  afterDraw(chart){
+    const opts = chart.config.options.plugins && chart.config.options.plugins.centerText;
+    if(!opts || !opts.display) return;
+    const { ctx, chartArea } = chart;
+    const { width, height, top, left } = chartArea;
+    ctx.save();
+    ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+    ctx.fillStyle = opts.color || '#0F172A';
+    ctx.font = "700 20px -apple-system, 'Segoe UI', Sarabun, sans-serif";
+    ctx.fillText(opts.text, left + width/2, top + height/2 - 6);
+    if(opts.subtext){
+      ctx.font = "500 11px -apple-system, 'Segoe UI', Sarabun, sans-serif";
+      ctx.fillStyle = '#54534C';
+      ctx.fillText(opts.subtext, left + width/2, top + height/2 + 12);
+    }
+    ctx.restore();
+  }
+};
+
+/** ----- state ----- */
+let ROWS = [];
+let openDetailIdx = null;
+let openDetailIdxMobile = null;
+let modalChart = null;
+
+/** ----- global filtering ----- */
+function applyFilter(label, predicateFn){
+  closeModal();
+  document.getElementById('searchBox').value = '';
+  const filterIndicator = document.getElementById('filterIndicator');
+  document.getElementById('filterLabel').textContent = 'กำลังกรอง: ' + label;
+  filterIndicator.classList.remove('hidden');
+  filterIndicator.classList.add('flex');
+  renderRows(ROWS.filter(predicateFn));
+  filterIndicator.scrollIntoView({ behavior:'smooth', block:'start' });
+}
+function clearFilter(){
+  const filterIndicator = document.getElementById('filterIndicator');
+  filterIndicator.classList.add('hidden');
+  filterIndicator.classList.remove('flex');
+  document.getElementById('searchBox').value = '';
+  renderRows(ROWS);
+}
+window.clearFilter = clearFilter;
+
+window.filterBySector = function(side, sector){
+  const wantPriv = sector === 'priv';
+  const label = (side === 'th' ? (wantPriv ? 'เอกชนไทย' : 'ภาครัฐไทย') : (wantPriv ? 'เอกชนต่างประเทศ' : 'ภาครัฐต่างประเทศ'));
+  applyFilter(label, r => {
+    const types = side === 'th' ? [r[COL.typeA], r[COL.typeB]] : [r[COL.typeAch], r[COL.typeBch]];
+    return types.some(t => t && orgIsPriv(t) === wantPriv);
+  });
+};
+window.filterByLevel = function(colIndex, label){
+  const idx = parseInt(colIndex, 10);
+  applyFilter(label, r => num(r[idx]) > 0);
+};
+window.filterByYear = function(year){
+  applyFilter('ปีที่ลงนาม: ' + year, r => signYear(r[COL.signDate]) === String(year));
+};
+window.filterBySubject = function(label, others, topSet){
+  if(others){ applyFilter('สาขาวิชา: อื่น ๆ', r => splitMulti(r[COL.subject]).some(s => !topSet.has(s))); }
+  else { applyFilter('สาขาวิชา: ' + label, r => splitMulti(r[COL.subject]).includes(label)); }
+};
+window.filterByActivity = function(label, others, topSet){
+  if(others){ applyFilter('กิจกรรม: อื่น ๆ', r => splitMulti(r[COL.activity]).some(a => !topSet.has(a))); }
+  else { applyFilter('กิจกรรม: ' + label, r => splitMulti(r[COL.activity]).includes(label)); }
+};
+window.filterByStatus = function(label){
+  applyFilter('สถานะ: ' + label, r => r[COL.status] === label);
+};
+
+/** ----- top KPI row (row 1) ----- */
+function renderCards(rows){
+  const totalMou = rows.length;
+  const thaiOrgType = {}, cnOrgType = {};
+  rows.forEach(r=>{
+    if(r[COL.partyAth] && !(r[COL.partyAth] in thaiOrgType)) thaiOrgType[r[COL.partyAth]] = r[COL.typeA];
+    if(r[COL.partyBth] && !(r[COL.partyBth] in thaiOrgType)) thaiOrgType[r[COL.partyBth]] = r[COL.typeB];
+    if(r[COL.partyAch] && !(r[COL.partyAch] in cnOrgType)) cnOrgType[r[COL.partyAch]] = r[COL.typeAch];
+    if(r[COL.partyBch] && !(r[COL.partyBch] in cnOrgType)) cnOrgType[r[COL.partyBch]] = r[COL.typeBch];
+  });
+  const thaiTotal = Object.keys(thaiOrgType).length;
+  const cnTotal = Object.keys(cnOrgType).length;
+  // นับความร่วมมือที่ใกล้หมดอายุ เพื่อให้เห็นสิ่งที่ต้องรีบดำเนินการทันทีตั้งแต่หน้าแรก
+  const expiringCount = rows.filter(r => r[COL.status] === 'ใกล้หมดอายุ').length;
+
+  const iconWrap = (name, bg, ink) => '<span class="flex-none w-10 h-10 rounded-xl ' + bg + ' ' + ink + ' flex items-center justify-center"><i data-lucide="' + name + '" class="w-5 h-5"></i></span>';
+  const chip = (label, onclick) => '<span onclick="' + onclick + '" class="cursor-pointer text-xs font-semibold px-3 py-1.5 rounded-full bg-[#F1EEE2] text-inksoft border border-bordc hover:bg-[#E6E2D3] hover:text-ink transition">' + label + '</span>';
+
+  document.getElementById('kpiRow1').innerHTML = `
+    <div onclick="clearFilter()" class="relative bg-herobg border border-herobd rounded-2xl px-5 py-4.5 pt-5 shadow-sm cursor-pointer hover:shadow-md transition">
+      <div class="absolute top-4 right-4">${iconWrap('file-text','bg-amber-100','text-amberink')}</div>
+      <p class="text-sm text-inksoft font-medium mb-2.5 pr-12">ความร่วมมือทั้งหมด</p>
+      <p class="text-3xl font-bold text-[#0F172A]">${fmt(totalMou)}</p>
+      <p class="text-xs text-[#9C9A8F] mt-1">คลิกเพื่อล้างตัวกรองและแสดงทั้งหมด</p>
+    </div>
+    <div class="relative bg-white border border-bordc rounded-2xl px-5 pt-5 pb-5 shadow-sm">
+      <div class="absolute top-4 right-4">${iconWrap('school','bg-blue-100','text-blue-800')}</div>
+      <p class="text-sm text-inksoft font-medium mb-2.5 pr-12">หน่วยงานไทย</p>
+      <p class="text-3xl font-bold text-[#0F172A]">${fmt(thaiTotal)}</p>
+      <div class="flex gap-2.5 mt-3.5 flex-wrap">
+        ${chip('ภาครัฐ', "filterBySector('th','gov')")}
+        ${chip('เอกชน', "filterBySector('th','priv')")}
+      </div>
+    </div>
+    <div class="relative bg-white border border-bordc rounded-2xl px-5 pt-5 pb-5 shadow-sm">
+      <div class="absolute top-4 right-4">${iconWrap('globe','bg-blue-100','text-blue-800')}</div>
+      <p class="text-sm text-inksoft font-medium mb-2.5 pr-12">หน่วยงานต่างประเทศ</p>
+      <p class="text-3xl font-bold text-[#0F172A]">${fmt(cnTotal)}</p>
+      <div class="flex gap-2.5 mt-3.5 flex-wrap">
+        ${chip('ภาครัฐ', "filterBySector('cn','gov')")}
+        ${chip('เอกชน', "filterBySector('cn','priv')")}
+      </div>
+    </div>
+    <div onclick="filterByStatus('ใกล้หมดอายุ')" class="relative bg-white border border-bordc rounded-2xl px-5 pt-5 pb-5 shadow-sm cursor-pointer hover:shadow-md transition">
+      <div class="absolute top-4 right-4">${iconWrap('alert-triangle','bg-ambersoft','text-amberink')}</div>
+      <p class="text-sm text-inksoft font-medium mb-2.5 pr-12">ใกล้หมดอายุ</p>
+      <p class="text-3xl font-bold ${expiringCount>0 ? 'text-amberink' : 'text-[#0F172A]'}">${fmt(expiringCount)}</p>
+      <p class="text-xs text-[#9C9A8F] mt-1">คลิกเพื่อดูรายการที่ต้องรีบต่ออายุ</p>
+    </div>
+  `;
+  lucide.createIcons();
+}
+
+/** ----- banners (row of buttons that open the modal) ----- */
+// group: จัดกลุ่มตามลักษณะเนื้อหา เพื่อให้ผู้ใช้สแกนหาหัวข้อที่ต้องการได้เร็วขึ้น
+// แต่ละกลุ่มมีชุดสีของตัวเองแทนสีอำพันเดียวที่ใช้ซ้ำทั้ง 9 การ์ดแบบเดิม
+const BANNER_GROUPS = {
+  overview: { label: 'ภาพรวมความร่วมมือ', bg: 'bg-blue-50',  ink: 'text-blue-800' },
+  students: { label: 'ผู้เรียนและกิจกรรม', bg: 'bg-teal-50',  ink: 'text-teal-800' },
+  outcomes: { label: 'ผลลัพธ์และบุคลากร',  bg: 'bg-orange-50', ink: 'text-orange-800' },
+};
+const BANNERS = [
+  { key:'trend',    icon:'trending-up',     title:'แนวโน้มการลงนามรายปี',                     hint:'2019 – 2026',              group:'overview' },
+  { key:'status',   icon:'shield-check',    title:'สถานะความร่วมมือ',                          hint:'ปกติ / ใกล้หมดอายุ / หมดอายุ', group:'overview' },
+  { key:'subject',  icon:'graduation-cap',  title:'Top สาขาวิชาที่มีความร่วมมือ',              hint:'5 อันดับแรก + อื่น ๆ',       group:'overview' },
+  { key:'students', icon:'users',           title:'ผู้เรียนภายใต้ความร่วมมือ',                  hint:'ปวช. / ปวส. / ป.ตรี',        group:'students' },
+  { key:'hsk',      icon:'message-circle',  title:'ผู้เรียนที่มีระดับทักษะ HSK',                hint:'HSK 1 – HSK 6',             group:'students' },
+  { key:'activity', icon:'activity',        title:'กิจกรรมในขอบเขตความร่วมมือ',                hint:'14+ ประเภทกิจกรรม',          group:'students' },
+  { key:'driven',   icon:'rocket',          title:'ผู้เรียนที่ได้รับการขับเคลื่อนความร่วมมือ',   hint:'ทุน / ทวิวุฒิ / ฝึกงาน / ทวิภาคี', group:'outcomes' },
+  { key:'grad',     icon:'briefcase',       title:'ผู้สำเร็จการศึกษา',                          hint:'เส้นทางหลังสำเร็จการศึกษา',     group:'outcomes' },
+  { key:'teacher',  icon:'user-check',      title:'บุคลากรครูภาษาจีน',                          hint:'ครูสัญชาติจีน / ครูไทย',       group:'outcomes' },
+];
+
+function renderBanners(){
+  // เรียงเป็น section ตาม group แทนการโยนการ์ดทั้ง 9 ใบไว้ใน grid เดียวแบบ flat
+  const html = Object.keys(BANNER_GROUPS).map(groupKey => {
+    const g = BANNER_GROUPS[groupKey];
+    const items = BANNERS.filter(b => b.group === groupKey);
+    const cards = items.map(b => `
+      <button onclick="openModal('${b.key}')" class="group flex items-center gap-3.5 bg-white border border-bordc rounded-2xl px-5 py-4.5 text-left shadow-sm hover:shadow-md hover:border-accent/30 transition">
+        <span class="flex-none w-11 h-11 rounded-xl ${g.bg} ${g.ink} flex items-center justify-center">
+          <i data-lucide="${b.icon}" class="w-5 h-5"></i>
+        </span>
+        <span class="min-w-0 flex-1">
+          <span class="block font-semibold text-[15px] leading-snug">${b.title}</span>
+          <span class="block text-xs text-inksoft mt-0.5">${b.hint}</span>
+        </span>
+        <i data-lucide="chevron-right" class="w-4 h-4 flex-none text-[#9C9A8F] group-hover:text-accent group-hover:translate-x-0.5 transition"></i>
+      </button>
+    `).join('');
+    return `
+      <p class="text-xs font-bold uppercase tracking-wider text-inksoft mb-2.5 mt-5 first:mt-0">${g.label}</p>
+      <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">${cards}</div>
+    `;
+  }).join('');
+  document.getElementById('bannerGrid').outerHTML = '<div id="bannerGrid" class="mb-8">' + html + '</div>';
+  lucide.createIcons();
+}
+
+/** ----- modal list (clickable legend rows under each chart) ----- */
+function modalList(items){
+  return '<div class="mt-4 border-t border-bordc divide-y divide-bordc">' + items.map(it => `
+    <button onclick="${it.onClick}" class="w-full flex items-center justify-between gap-3 py-2.5 px-1 text-left hover:bg-black/5 rounded-lg transition ${it.value===0?'opacity-45':''}">
+      <span class="flex items-center gap-2 text-sm min-w-0"><span class="flex-none w-2.5 h-2.5 rounded-sm" style="background:${it.color}"></span><span class="truncate">${esc(it.label)}</span></span>
+      <span class="flex-none font-bold text-[15px] text-[#0F172A]">${fmt(it.value)}</span>
+    </button>
+  `).join('') + '</div>';
+}
+function modalTotalBadge(total, unit){
+  return '<p class="text-center text-sm font-bold text-inksoft mb-1">รวม ' + fmt(total) + (unit || ' รายการ') + '</p>';
+}
+
+/** ----- modal builders: one per banner key ----- */
+const MODAL_BUILDERS = {
+  trend(rows){
+    const YEAR_START = 2019, YEAR_END = 2026;
+    const yearCount = {};
+    for(let y=YEAR_START;y<=YEAR_END;y++) yearCount[y]=0;
+    rows.forEach(r=>{ const y=signYear(r[COL.signDate]); if(y && yearCount[y]!==undefined) yearCount[y]++; });
+    const years = Object.keys(yearCount);
+    return {
+      title: 'แนวโน้มการลงนามรายปี', subtitle: 'จำนวน MOU ที่ลงนามในแต่ละปี (2019–2026)',
+      bodyHtml: '<canvas id="modalChart"></canvas>' + modalList(years.map(y=>({label:'ปี '+y, value:yearCount[y], color:'#2F5A16', onClick:"filterByYear('"+y+"')"}))),
+      render(){
+        return new Chart(document.getElementById('modalChart'), {
+          type:'line',
+          data:{ labels:years, datasets:[{ data:years.map(y=>yearCount[y]), borderColor:'#2F5A16', backgroundColor:'#DCEACB', tension:.3, fill:true, pointRadius:4, pointHoverRadius:6 }] },
+          options:{ plugins:{legend:{display:false}}, scales:{y:{beginAtZero:true,ticks:{stepSize:4,font:{size:11}}}, x:{ticks:{font:{size:11}}}},
+            onClick:(evt, els)=>{ if(!els.length) return; filterByYear(years[els[0].index]); },
+            onHover:(evt, els)=>{ evt.native.target.style.cursor = els.length ? 'pointer' : 'default'; }
+          }
+        });
+      }
+    };
+  },
+  subject(rows){
+    const subjCount = {};
+    rows.forEach(r=> splitMulti(r[COL.subject]).forEach(s=> subjCount[s]=(subjCount[s]||0)+1 ));
+    const sorted = Object.entries(subjCount).sort((a,b)=>b[1]-a[1]);
+    const top = sorted.slice(0,5);
+    const topSet = new Set(top.map(x=>x[0]));
+    const othersCount = sorted.slice(5).reduce((s,x)=>s+x[1],0);
+    // Chart.js horizontal bars render array index 0 at the TOP and the last
+    // index at the BOTTOM, so keeping this in plain descending order (top
+    // subject first) puts the highest bar on top and "อื่น ๆ" at the very
+    // bottom — no reverse() needed.
+    const labels = top.map(x=>x[0]).concat(othersCount>0 ? ['อื่น ๆ'] : []);
+    const values = top.map(x=>x[1]).concat(othersCount>0 ? [othersCount] : []);
+    return {
+      title: 'Top สาขาวิชาที่มีความร่วมมือ', subtitle: '5 อันดับแรก รวม "อื่น ๆ"',
+      bodyHtml: '<canvas id="modalChart"></canvas>' + modalList(labels.map(l=>({label:l, value:values[labels.indexOf(l)], color:l==='อื่น ๆ' ? '#9C9A8F' : '#2F5A16', onClick:"filterBySubject('"+l+"',"+(l==='อื่น ๆ')+", window.__topSubjSet)"}))),
+      render(){
+        window.__topSubjSet = topSet;
+        return new Chart(document.getElementById('modalChart'), {
+          type:'bar',
+          data:{ labels, datasets:[{ data:values, backgroundColor:labels.map(l=>l==='อื่น ๆ'?'#9C9A8F':'#2F5A16'), borderRadius:4, maxBarThickness:22 }] },
+          options:{ indexAxis:'y',
+            plugins:{ legend:{display:false}, datalabels:{ display:true, anchor:'end', align:'end', color:'#242420', font:{size:11,weight:'700'}, formatter:v=>v>0?v:'' } },
+            scales:{ x:{beginAtZero:true,ticks:{stepSize:1,font:{size:11}},grid:{display:false}}, y:{ticks:{font:{size:12}},grid:{display:false}} },
+            layout:{padding:{right:24}},
+            onClick:(evt, els)=>{ if(!els.length) return; const l=labels[els[0].index]; filterBySubject(l, l==='อื่น ๆ', topSet); },
+            onHover:(evt, els)=>{ evt.native.target.style.cursor = els.length ? 'pointer' : 'default'; }
+          }
+        });
+      }
+    };
+  },
+  activity(rows){
+    const activityCount = {};
+    rows.forEach(r=> splitMulti(r[COL.activity]).forEach(a=> activityCount[a]=(activityCount[a]||0)+1 ));
+    const allEntries = Object.entries(activityCount).filter(x=>x[1]>0).sort((a,b)=>b[1]-a[1]);
+    const totalAll = allEntries.reduce((s,x)=>s+x[1],0);
+
+    // Show at least 7 top activities; if "อื่น ๆ" would still take up more
+    // than a quarter of the total, keep adding categories (up to 9) until
+    // it doesn't, so the grey slice never dominates the chart.
+    const MIN_SHOWN = 7, MAX_SHOWN = 9, OTHERS_CAP_RATIO = 0.25;
+    let shownCount = Math.min(MIN_SHOWN, allEntries.length);
+    while(shownCount < Math.min(MAX_SHOWN, allEntries.length)){
+      const shownSum = allEntries.slice(0, shownCount).reduce((s,x)=>s+x[1], 0);
+      if(totalAll - shownSum <= totalAll * OTHERS_CAP_RATIO) break;
+      shownCount++;
+    }
+
+    const top = allEntries.slice(0, shownCount);
+    const rest = allEntries.slice(shownCount);
+    const topSet = new Set(top.map(x=>x[0]));
+    const othersCount = rest.reduce((s,x)=>s+x[1],0);
+
+    // Chart.js draws each arc as value/total * 360° — a plain ratio with
+    // no intermediate rounding — so two activities with the exact same
+    // count (e.g. 35 and 35) always get mathematically identical angles.
+    // The old 14+-thin-slice layout just made that impossible to SEE;
+    // grouping into fewer, larger slices (below) is what actually fixes
+    // the readability problem, not the angle math itself.
+    const labels = top.map(x=>x[0]).concat(othersCount>0 ? ['อื่น ๆ'] : []);
+    const values = top.map(x=>x[1]).concat(othersCount>0 ? [othersCount] : []);
+    const total = totalAll;
+    const colors = activityColors(labels);
+
+    const pctText = (v) => { if(!total || v<=0) return '0%'; const p = v/total*100; return (p<1 ? '<1' : Math.round(p)) + '%'; };
+
+    // Every individual activity gets its own legend row — including the
+    // ones folded into "อื่น ๆ" for the chart — so nothing is hidden;
+    // users can always see exactly which activities "อื่น ๆ" is made of.
+    const topRows = top.map((e,i) => activityLegendRow(e[0], e[1], pctText(e[1]), colors[i], "filterByActivity('"+e[0]+"')"));
+    const otherRows = rest.map(e => activityLegendRow(e[0], e[1], pctText(e[1]), '#9C9A8F', "filterByActivity('"+e[0]+"')"));
+    const legendHtml = '<div class="divide-y divide-bordc">' + topRows.join('') +
+      (rest.length ? '<div class="px-1 pt-3 pb-1.5 text-[11px] font-bold uppercase tracking-wide text-inksoft">อื่น ๆ แยกตามกิจกรรมย่อย (' + rest.length + ' ประเภท)</div>' + otherRows.join('') : '') +
+      '</div>';
+
+    return {
+      title: 'กิจกรรมในขอบเขตความร่วมมือ',
+      subtitle: 'Top ' + shownCount + ' กิจกรรม' + (rest.length ? ' + อื่น ๆ อีก ' + rest.length + ' ประเภท' : ''),
+      // The body is a height-capped flex column: chart + total badge are a
+      // fixed, non-shrinking block up top, and ONLY the legend list below
+      // scrolls within the remaining space (min-h-0 lets a flex child
+      // shrink below its content's natural height so overflow-y-auto
+      // actually kicks in). However long the full activity list gets, the
+      // donut itself stays pinned in view — it can never scroll out of
+      // sight behind the sticky modal header.
+      bodyHtml: `
+        <div class="flex flex-col max-h-[70vh]">
+          <div class="flex-none">
+            <canvas id="modalChart"></canvas>
+            ${modalTotalBadge(total, ' รายการ')}
+          </div>
+          <div class="flex-1 min-h-0 overflow-y-auto mt-2 border-t border-bordc pr-1">
+            ${legendHtml}
+          </div>
+        </div>`,
+      render(){
+        window.__activityTopSet = topSet;
+        return new Chart(document.getElementById('modalChart'), {
+          type:'doughnut',
+          data:{ labels, datasets:[{ data:values, backgroundColor:colors }] },
+          options:{ plugins:{ legend:{display:false},
+              datalabels:{ display:true, color:(ctx)=>contrastTextColor(colors[ctx.dataIndex]), font:{size:10,weight:'700'},
+                formatter:(v)=>{ if(!total||v<=0) return ''; const pct=v/total*100; return pct<1?'<1%':Math.round(pct)+'%'; } } },
+            onClick:(evt, els)=>{ if(!els.length) return; const l=labels[els[0].index]; filterByActivity(l, l==='อื่น ๆ', topSet); },
+            onHover:(evt, els)=>{ evt.native.target.style.cursor = els.length ? 'pointer' : 'default'; }
+          }
+        });
+      }
+    };
+  },
+  status(rows){
+    const statusCount = {ปกติ:0, ใกล้หมดอายุ:0, หมดอายุ:0};
+    rows.forEach(r=>{ const s=r[COL.status]; if(statusCount[s]!==undefined) statusCount[s]++; });
+    const labels = Object.keys(statusCount);
+    const values = Object.values(statusCount);
+    const colors = ['#2F5A16','#A8790F','#9E2E2E'];
+    const total = values.reduce((a,b)=>a+b,0);
+    return {
+      title:'สถานะความร่วมมือ', subtitle:'ปกติ / ใกล้หมดอายุ / หมดอายุ',
+      bodyHtml: '<canvas id="modalChart"></canvas>' + modalList(labels.map((l,i)=>({label:l, value:values[i], color:colors[i], onClick:"filterByStatus('"+l+"')"}))),
+      render(){
+        return new Chart(document.getElementById('modalChart'), {
+          type:'doughnut',
+          data:{ labels, datasets:[{data:values, backgroundColor:colors}] },
+          options:{ plugins:{ legend:{position:'bottom', labels:{boxWidth:10,font:{size:12}}},
+              datalabels:{ display:true, color:(ctx)=>contrastTextColor(colors[ctx.dataIndex]), font:{size:11,weight:'700'},
+                formatter:(v)=>{ if(!total||v<=0) return ''; const pct=v/total*100; return pct<1?'<1%':Math.round(pct)+'%'; } } },
+            onClick:(evt, els)=>{ if(!els.length) return; filterByStatus(labels[els[0].index]); },
+            onHover:(evt, els)=>{ evt.native.target.style.cursor = els.length ? 'pointer' : 'default'; }
+          }
+        });
+      }
+    };
+  },
+  students(rows){
+    const labels = ['ปวช.','ปวส.','ป.ตรี'];
+    const cols = [COL.puvch, COL.puvs, COL.pubtri];
+    const values = cols.map(c=> rows.reduce((s,r)=>s+num(r[c]),0));
+    const total = values.reduce((a,b)=>a+b,0);
+    const colors = colorsForLabels(labels);
+    return {
+      title:'ผู้เรียนภายใต้ความร่วมมือ', subtitle:'จำแนกตามระดับการศึกษา',
+      bodyHtml: '<canvas id="modalChart"></canvas>' + modalList(labels.map((l,i)=>({label:l, value:values[i], color:colors[i], onClick:"filterByLevel("+cols[i]+",'"+l+"')"}))),
+      render(){
+        return new Chart(document.getElementById('modalChart'), {
+          type:'doughnut',
+          data:{ labels, datasets:[{data:values, backgroundColor:colors}] },
+          options:{ plugins:{ legend:{position:'bottom', labels:{boxWidth:10,font:{size:12}}},
+              datalabels:{ display:true, color:(ctx)=>contrastTextColor(colors[ctx.dataIndex]), font:{size:10,weight:'700'},
+                formatter:(v)=>{ if(!total||v<=0) return ''; const pct=v/total*100; return pct<1?'<1%':Math.round(pct)+'%'; } },
+              centerText:{ display:true, text:fmt(total), subtext:'รวมทั้งหมด', color:'#0F172A' } },
+            onClick:(evt, els)=>{ if(!els.length) return; const i=els[0].index; filterByLevel(cols[i], labels[i]); },
+            onHover:(evt, els)=>{ evt.native.target.style.cursor = els.length ? 'pointer' : 'default'; }
+          },
+          plugins:[centerTextPlugin]
+        });
+      }
+    };
+  },
+  driven(rows){
+    const labels = ['ทุนระยะสั้น','ทุนระยะยาว','ทวิวุฒิ','ฝึกงานในจีน','ฝึกงาน บ.จีนในไทย','ทวิภาคี'];
+    const cols = [COL.scholarShort, COL.scholarLong, COL.dual, COL.internCn, COL.internCnTh, COL.bilateral];
+    const values = cols.map(c=> rows.reduce((s,r)=>s+num(r[c]),0));
+    const total = values.reduce((a,b)=>a+b,0);
+    const colors = colorsForLabels(labels);
+    return {
+      title:'ผู้เรียนที่ได้รับการขับเคลื่อนความร่วมมือ', subtitle:'จำแนกตามรูปแบบการขับเคลื่อน',
+      bodyHtml: '<canvas id="modalChart"></canvas>' + modalList(labels.map((l,i)=>({label:l, value:values[i], color:colors[i], onClick:"filterByLevel("+cols[i]+",'"+l+"')"}))),
+      render(){
+        return new Chart(document.getElementById('modalChart'), {
+          type:'doughnut',
+          data:{ labels, datasets:[{data:values, backgroundColor:colors}] },
+          options:{ plugins:{ legend:{position:'bottom', labels:{boxWidth:10,font:{size:11}}},
+              datalabels:{ display:true, color:(ctx)=>contrastTextColor(colors[ctx.dataIndex]), font:{size:10,weight:'700'},
+                formatter:(v)=>{ if(!total||v<=0) return ''; const pct=v/total*100; return pct<1?'<1%':Math.round(pct)+'%'; } },
+              centerText:{ display:true, text:fmt(total), subtext:'รวมทั้งหมด', color:'#0F172A' } },
+            onClick:(evt, els)=>{ if(!els.length) return; const i=els[0].index; filterByLevel(cols[i], labels[i]); },
+            onHover:(evt, els)=>{ evt.native.target.style.cursor = els.length ? 'pointer' : 'default'; }
+          },
+          plugins:[centerTextPlugin]
+        });
+      }
+    };
+  },
+  hsk(rows){
+    const labels = ['HSK 1','HSK 2','HSK 3','HSK 4','HSK 5','HSK 6'];
+    const cols = [COL.hsk1, COL.hsk2, COL.hsk3, COL.hsk4, COL.hsk5, COL.hsk6];
+    const values = cols.map(c=> rows.reduce((s,r)=>s+num(r[c]),0));
+    const total = values.reduce((a,b)=>a+b,0);
+    const colors = hskColors();
+    return {
+      title:'ผู้เรียนที่มีระดับทักษะ HSK', subtitle:'จำแนกตามระดับ HSK 1–6',
+      bodyHtml: modalTotalBadge(total, ' คน') + '<canvas id="modalChart"></canvas>' + modalList(labels.map((l,i)=>({label:l, value:values[i], color:colors[i], onClick:"filterByLevel("+cols[i]+",'"+l+"')"}))),
+      render(){
+        return new Chart(document.getElementById('modalChart'), {
+          type:'bar',
+          data:{ labels, datasets:[{ data:values, backgroundColor:colors, borderRadius:4, maxBarThickness:30 }] },
+          options:{ plugins:{ legend:{display:false}, datalabels:{ display:true, anchor:'end', align:'top', color:'#242420', font:{size:11,weight:'700'}, formatter:v=>v>0?v:'' } },
+            scales:{ y:{beginAtZero:true, ticks:{font:{size:11}}}, x:{ticks:{font:{size:11}}, grid:{display:false}} },
+            onClick:(evt, els)=>{ if(!els.length) return; const i=els[0].index; filterByLevel(cols[i], labels[i]); },
+            onHover:(evt, els)=>{ evt.native.target.style.cursor = els.length ? 'pointer' : 'default'; }
+          }
+        });
+      }
+    };
+  },
+  grad(rows){
+    const labels = ['ทำงานในจีน','ทำงาน บ.จีนในไทย','ศึกษาต่อ'];
+    const cols = [COL.workCn, COL.workCnTh, COL.further];
+    const values = cols.map(c=> rows.reduce((s,r)=>s+num(r[c]),0));
+    const total = values.reduce((a,b)=>a+b,0);
+    const colors = colorsForLabels(labels);
+    return {
+      title:'ผู้สำเร็จการศึกษา', subtitle:'เส้นทางหลังสำเร็จการศึกษา',
+      bodyHtml: '<canvas id="modalChart"></canvas>' + modalList(labels.map((l,i)=>({label:l, value:values[i], color:colors[i], onClick:"filterByLevel("+cols[i]+",'"+l+"')"}))),
+      render(){
+        return new Chart(document.getElementById('modalChart'), {
+          type:'doughnut',
+          data:{ labels, datasets:[{data:values, backgroundColor:colors}] },
+          options:{ plugins:{ legend:{position:'bottom', labels:{boxWidth:10,font:{size:12}}},
+              datalabels:{ display:true, color:(ctx)=>contrastTextColor(colors[ctx.dataIndex]), font:{size:10,weight:'700'},
+                formatter:(v)=>{ if(!total||v<=0) return ''; const pct=v/total*100; return pct<1?'<1%':Math.round(pct)+'%'; } },
+              centerText:{ display:true, text:fmt(total), subtext:'รวมทั้งหมด', color:'#0F172A' } },
+            onClick:(evt, els)=>{ if(!els.length) return; const i=els[0].index; filterByLevel(cols[i], labels[i]); },
+            onHover:(evt, els)=>{ evt.native.target.style.cursor = els.length ? 'pointer' : 'default'; }
+          },
+          plugins:[centerTextPlugin]
+        });
+      }
+    };
+  },
+  teacher(rows){
+    const labels = ['ครูสัญชาติจีน','ครูไทยด้านภาษาจีน'];
+    const cols = [COL.teacherCn, COL.teacherTh];
+    const values = cols.map(c=> rows.reduce((s,r)=>s+num(r[c]),0));
+    const total = values.reduce((a,b)=>a+b,0);
+    const colors = colorsForLabels(labels);
+    return {
+      title:'บุคลากรครูภาษาจีน', subtitle:'ครูสัญชาติจีน / ครูไทยด้านภาษาจีน',
+      bodyHtml: '<canvas id="modalChart"></canvas>' + modalList(labels.map((l,i)=>({label:l, value:values[i], color:colors[i], onClick:"filterByLevel("+cols[i]+",'"+l+"')"}))),
+      render(){
+        return new Chart(document.getElementById('modalChart'), {
+          type:'doughnut',
+          data:{ labels, datasets:[{data:values, backgroundColor:colors}] },
+          options:{ plugins:{ legend:{position:'bottom', labels:{boxWidth:10,font:{size:12}}},
+              datalabels:{ display:true, color:(ctx)=>contrastTextColor(colors[ctx.dataIndex]), font:{size:10,weight:'700'},
+                formatter:(v)=>{ if(!total||v<=0) return ''; const pct=v/total*100; return pct<1?'<1%':Math.round(pct)+'%'; } },
+              centerText:{ display:true, text:fmt(total), subtext:'รวมทั้งหมด', color:'#0F172A' } },
+            onClick:(evt, els)=>{ if(!els.length) return; const i=els[0].index; filterByLevel(cols[i], labels[i]); },
+            onHover:(evt, els)=>{ evt.native.target.style.cursor = els.length ? 'pointer' : 'default'; }
+          },
+          plugins:[centerTextPlugin]
+        });
+      }
+    };
+  }
+};
+
+/** Color-coded pill for a travel type; each type gets a fixed, readable pair. */
+function travelTypeBadge(type){
+  const map = {
+    'ทวิวุฒิ': 'bg-purple-50 text-purple-800 border border-purple-100',
+    'ระยะยาว': 'bg-emerald-50 text-emerald-800 border border-emerald-100',
+    'อบรมระยะสั้น': 'bg-orange-50 text-orange-800 border border-orange-100',
+  };
+  const cls = map[type] || 'bg-[#F1EEE2] text-inksoft border border-bordc';
+  return '<span class="inline-block text-[11px] font-bold px-2.5 py-1 rounded-full whitespace-nowrap ' + cls + '">' + esc(type) + '</span>';
+}
+
+function openModal(key){
+  const cfg = MODAL_BUILDERS[key](ROWS);
+  document.getElementById('modalTitle').textContent = cfg.title;
+  document.getElementById('modalSubtitle').textContent = cfg.subtitle || '';
+  document.getElementById('modalBody').innerHTML = cfg.bodyHtml;
+  document.getElementById('modalOverlay').classList.remove('hidden');
+  document.body.style.overflow = 'hidden';
+  if(modalChart){ modalChart.destroy(); modalChart = null; }
+  modalChart = cfg.render ? cfg.render() : null;
+  if(cfg.afterMount) cfg.afterMount();
+  lucide.createIcons();
+}
+window.openModal = openModal;
+
+function closeModal(){
+  const overlay = document.getElementById('modalOverlay');
+  if(overlay.classList.contains('hidden')) return;
+  overlay.classList.add('hidden');
+  document.body.style.overflow = '';
+  if(modalChart){ modalChart.destroy(); modalChart = null; }
+}
+window.closeModal = closeModal;
+document.addEventListener('keydown', (e)=>{ if(e.key === 'Escape') closeModal(); });
+
+/** ----- Tab navigation (Overview <-> China Travel Details) ----- */
+const TAB_SUBTITLE = {
+  overview: 'ภาพรวมความร่วมมือทางวิชาการระหว่างสถานศึกษาไทยและหน่วยงานจีน',
+  travel: 'ข้อมูลนักศึกษาไทยที่เดินทางไปศึกษาต่อและฝึกอบรม ณ ประเทศจีน ภายใต้ความร่วมมือ'
+};
+function switchTab(tab){
+  closeModal();
+  const kpiRow1 = document.getElementById('kpiRow1');
+  const overviewContent = document.getElementById('tabOverviewContent');
+  const travelContent = document.getElementById('tabTravelContent');
+  const btnOverview = document.getElementById('tabBtnOverview');
+  const btnTravel = document.getElementById('tabBtnTravel');
+  const subtitle = document.getElementById('pageSubtitle');
+
+  const activeCls = ['text-accent', 'border-accent'];
+  const inactiveCls = ['text-inksoft', 'border-transparent'];
+
+  if(tab === 'travel'){
+    kpiRow1.classList.add('hidden');
+    kpiRow1.classList.remove('grid');
+    overviewContent.classList.add('hidden');
+    travelContent.classList.remove('hidden');
+    btnTravel.classList.add(...activeCls);
+    btnTravel.classList.remove(...inactiveCls);
+    btnOverview.classList.add(...inactiveCls);
+    btnOverview.classList.remove(...activeCls);
+    subtitle.textContent = TAB_SUBTITLE.travel;
+    renderTravelTab(chinaTravelData);
+  } else {
+    kpiRow1.classList.remove('hidden');
+    kpiRow1.classList.add('grid');
+    overviewContent.classList.remove('hidden');
+    travelContent.classList.add('hidden');
+    btnOverview.classList.add(...activeCls);
+    btnOverview.classList.remove(...inactiveCls);
+    btnTravel.classList.add(...inactiveCls);
+    btnTravel.classList.remove(...activeCls);
+    subtitle.textContent = TAB_SUBTITLE.overview;
+    lucide.createIcons();
+  }
+}
+window.switchTab = switchTab;
+
+/** ----- Tab 2: China Travel Details — KPI cards + search + table/cards -----
+    data: the full chinaTravelData array (KPI cards always reflect the
+    full dataset); the search box filters what's shown in the table/cards
+    below without touching the KPI totals. */
+/** ----- Tab 2: China Travel Details — grouped accordion table -----
+    chinaTravelData is the flat per-record dataset (one entry per Thai
+    college + Chinese partner institution pair). buildTravelGroups()
+    aggregates it by Thai college so the table can show one parent row
+    per college (with a total headcount) that expands into per-partner
+    child rows. Group order follows first appearance in the source CSV. */
+function buildTravelGroups(data){
+  const order = [];
+  const map = new Map();
+  data.forEach(t => {
+    const key = t.thaiCollege || '(ไม่ระบุวิทยาลัย)';
+    if(!map.has(key)){ map.set(key, { thaiCollege: key, items: [], totalStudents: 0 }); order.push(key); }
+    const g = map.get(key);
+    g.items.push(t);
+    g.totalStudents += num(t.studentCount);
+  });
+  return order.map(k => map.get(k));
+}
+
+let openTravelGroupKey = null; // accordion: มีกลุ่มที่ขยายได้ทีละ 1 กลุ่มเท่านั้น (คลิกกลุ่มอื่นจะหุบกลุ่มเดิมอัตโนมัติ)
+
+let travelActivityChart = null;
+
+function renderTravelKpis(data){
+  const totalStudents = data.reduce((s,t)=>s+num(t.studentCount),0);
+  const totalThaiColleges = new Set(data.map(t=>t.thaiCollege).filter(Boolean)).size;
+  const totalCnColleges = new Set(data.map(t=>t.cnCollege).filter(Boolean)).size;
+
+  const typeCount = {};
+  data.forEach(t=>{ const ty = t.travelType || 'ไม่ระบุ'; typeCount[ty] = (typeCount[ty]||0) + num(t.studentCount); });
+  // เรียงจากมากไปน้อยเพื่อให้ประเภทที่มีสัดส่วนสูงสุดอยู่บนสุดของ legend เสมอ
+  const typeLabels = Object.keys(typeCount).sort((a,b)=>typeCount[b]-typeCount[a]);
+  // ใช้ colorsForLabels (ชุดสีเดียวกับกราฟอื่นในหน้านี้) แทนสีตายตัวที่ครอบคลุมแค่ 3 ประเภท
+  // เพื่อให้ทุกประเภทกิจกรรมมีสีของตัวเองแยกจากกันชัดเจน ไม่ตกไปเป็นสีเทาเหมือนกันหมด
+  const typeColors = colorsForLabels(typeLabels);
+
+  // การ์ดตัวเลขล้วน: ใช้ร่วมกันทั้ง 3 ใบที่ไม่ใช่การ์ดหลัก เพื่อให้น้ำหนักภาพเท่ากันทุกใบ
+  // iconBg/iconInk แยกตามหมวดหมู่ (น้ำเงิน = สถาบัน, ส้ม = กิจกรรม) ให้สอดคล้องกับแท็บภาพรวม
+  const kpiBox = (icon, label, value, unit, iconBg, iconInk) => `
+    <div class="relative bg-white border border-bordc rounded-2xl px-5 py-4.5 pt-5 shadow-sm">
+      <div class="absolute top-4 right-4"><span class="flex-none w-10 h-10 rounded-xl ${iconBg} ${iconInk} flex items-center justify-center"><i data-lucide="${icon}" class="w-5 h-5"></i></span></div>
+      <p class="text-sm text-inksoft font-medium mb-2.5 pr-12">${label}</p>
+      <p class="text-3xl font-bold text-[#0F172A]">${fmt(value)}<span class="text-sm font-medium text-inksoft ml-1">${unit}</span></p>
+    </div>`;
+
+  document.getElementById('travelKpiRow').innerHTML =
+    // การ์ดหลัก (hero): ใช้พื้นหลัง herobg เด่นกว่าใบอื่น เพราะเป็นตัวเลขสรุปสำคัญที่สุดของแท็บนี้
+    `<div class="relative bg-herobg border border-herobd rounded-2xl px-5 py-4.5 pt-5 shadow-sm">
+      <div class="absolute top-4 right-4"><span class="flex-none w-10 h-10 rounded-xl bg-white/60 text-amberink flex items-center justify-center"><i data-lucide="users" class="w-5 h-5"></i></span></div>
+      <p class="text-sm text-inksoft font-medium mb-2.5 pr-12">นักศึกษาเดินทางทั้งหมด</p>
+      <p class="text-3xl font-bold text-[#0F172A]">${fmt(totalStudents)}<span class="text-sm font-medium text-inksoft ml-1">คน</span></p>
+    </div>` +
+    kpiBox('school', 'วิทยาลัยไทยที่เข้าร่วม', totalThaiColleges, 'แห่ง', 'bg-blue-100', 'text-blue-800') +
+    kpiBox('landmark', 'วิทยาลัยจีนที่เข้าร่วม', totalCnColleges, 'แห่ง', 'bg-blue-100', 'text-blue-800') +
+    kpiBox('activity', 'ประเภทกิจกรรม', typeLabels.length, 'ประเภท', 'bg-orange-100', 'text-orange-800');
+  lucide.createIcons();
+
+  // สรุปประเภทกิจกรรม: แยกออกมาเป็นการ์ดของตัวเองแทนการอัดไว้ในแถว KPI
+  // เพื่อไม่ให้ความหนาแน่นของข้อมูลในการ์ดนี้ต่างจากอีก 4 ใบที่มีแค่ตัวเลขเดี่ยว
+  document.getElementById('travelActivityCard').innerHTML = `
+    <p class="text-sm text-inksoft font-medium mb-3">สรุปประเภทกิจกรรม</p>
+    <div class="flex items-center gap-5">
+      <div class="w-24 h-24 flex-none"><canvas id="travelActivityChart"></canvas></div>
+      <div class="flex-1 flex flex-col gap-1.5">
+        ${typeLabels.map((l,i)=>`<div class="flex items-center gap-2 text-sm text-inksoft"><span class="w-2.5 h-2.5 rounded-full flex-none" style="background:${typeColors[i]}"></span><span class="truncate">${esc(l)}</span><span class="ml-auto font-bold text-ink">${fmt(typeCount[l])} คน</span></div>`).join('')}
+      </div>
+    </div>`;
+
+  if(travelActivityChart) travelActivityChart.destroy();
+  travelActivityChart = new Chart(document.getElementById('travelActivityChart'), {
+    type:'doughnut',
+    data:{ labels:typeLabels, datasets:[{ data:typeLabels.map(l=>typeCount[l]), backgroundColor:typeColors, borderWidth:0 }] },
+    options:{ cutout:'65%', plugins:{ legend:{display:false}, datalabels:{display:false} } }
+  });
+}
+
+/** Renders one parent row per Thai college plus its (initially hidden,
+    unless expanded or search-matched) per-partner child rows — each
+    child row reuses the same 4 <td> structure as the parent so every
+    column lines up exactly with the header. */
+function renderTravelTable(groups, forceExpandKeys){
+  const tbody = document.getElementById('travelTbody');
+  if(groups.length === 0){
+    tbody.innerHTML = '<tr><td colspan="4" class="text-center text-inksoft p-10">ไม่พบข้อมูลที่ค้นหา</td></tr>';
+    return;
+  }
+  tbody.innerHTML = groups.map((g, gi) => {
+    const key = g.thaiCollege;
+    const isOpen = openTravelGroupKey === key || forceExpandKeys.has(key);
+    const childRows = g.items.map(item => `
+      <tr class="travel-child ${isOpen ? '' : 'hidden'} bg-[#F4F4EC] border-t border-bordc" data-group="${gi}">
+        <td class="p-2.5 align-top text-center text-inksoft">↳</td>
+        <td class="p-2.5 pl-7 align-top break-words whitespace-normal text-sm text-inksoft">${esc(item.cnCollege) || '-'}</td>
+        <td class="p-2.5 align-top text-center whitespace-nowrap font-light text-[14px] text-[#0F172A]">${fmt(item.studentCount)}</td>
+        <td class="p-2.5 align-top text-center">${travelTypeBadge(item.travelType)}</td>
+      </tr>`).join('');
+    return `
+      <tr class="travel-parent cursor-pointer hover:bg-black/[0.02] border-t border-bordc" data-group="${gi}" role="button" tabindex="0" aria-expanded="${isOpen}" onclick="toggleTravelGroup('${gi}')" onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();toggleTravelGroup('${gi}');}">
+        <td class="p-3 align-top text-center text-sm font-bold text-inksoft">${gi + 1}</td>
+        <td class="p-4 align-top break-words whitespace-normal font-semibold text-[14px]">${esc(g.thaiCollege)}</td>
+        <td class="p-3 align-top text-center whitespace-nowrap font-bold text-[15px] text-[#0F172A]">${fmt(g.totalStudents)}</td>
+        <td class="p-3 align-top text-center">
+          <button class="travel-toggle-btn inline-flex items-center gap-1.5 text-[13px] font-semibold text-accent hover:underline transition" data-group="${gi}">
+            <span class="chev">${isOpen ? '▲' : '▼'}</span> ${isOpen ? 'ซ่อนข้อมูล' : 'ดูข้อมูล (' + g.items.length + ' โครงการ)'}
+          </button>
+        </td>
+      </tr>
+      ${childRows}`;
+  }).join('');
+}
+
+function renderTravelMobileCards(groups, forceExpandKeys){
+  const wrap = document.getElementById('travelMobileCards');
+  if(groups.length === 0){
+    wrap.innerHTML = '<p class="text-center text-inksoft p-8 text-sm">ไม่พบข้อมูลที่ค้นหา</p>';
+    return;
+  }
+  wrap.innerHTML = groups.map((g, gi) => {
+    const key = g.thaiCollege;
+    const isOpen = openTravelGroupKey === key || forceExpandKeys.has(key);
+    const childItems = g.items.map(item => `
+      <div class="flex flex-col gap-1.5 py-2.5 px-3 border-t border-bordc bg-[#F4F4EC]">
+        <div class="flex items-start gap-1.5">
+          <span class="text-inksoft flex-none">↳</span>
+          <p class="text-sm text-inksoft break-words whitespace-normal flex-1">${esc(item.cnCollege) || '-'}</p>
+        </div>
+        <div class="flex items-center justify-between pl-4">
+          ${travelTypeBadge(item.travelType)}
+          <span class="font-light text-[14px] text-[#0F172A]">${fmt(item.studentCount)} คน</span>
+        </div>
+      </div>`).join('');
+    return `
+    <div class="w-full bg-white rounded-xl shadow-sm border border-bordc mb-3 overflow-hidden">
+      <div class="p-4 flex flex-col gap-2.5 cursor-pointer" role="button" tabindex="0" aria-expanded="${isOpen}" onclick="toggleTravelGroup('${gi}')" onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();toggleTravelGroup('${gi}');}">
+        <div class="flex justify-between items-start gap-2">
+          <span class="font-bold text-accent text-sm whitespace-nowrap">#${gi + 1}</span>
+          <span class="font-bold text-[15px] text-[#0F172A] whitespace-nowrap">${fmt(g.totalStudents)} คน</span>
+        </div>
+        <p class="font-semibold text-[15px] leading-snug break-words whitespace-normal">${esc(g.thaiCollege)}</p>
+        <button class="travel-toggle-btn self-start inline-flex items-center gap-1.5 text-[12px] font-semibold text-accent hover:underline" data-group="${gi}">
+          <span class="chev">${isOpen ? '▲' : '▼'}</span> ${isOpen ? 'ซ่อนข้อมูล' : 'ดูข้อมูล (' + g.items.length + ' โครงการ)'}
+        </button>
+      </div>
+      <div class="travel-child-m ${isOpen ? '' : 'hidden'}" data-group="${gi}">${childItems}</div>
+    </div>`;
+  }).join('');
+}
+
+function renderTravelFooter(groups){
+  const totalColleges = groups.length;
+  const totalStudents = groups.reduce((s,g)=>s+g.totalStudents, 0);
+  document.getElementById('travelFooterColleges').textContent = fmt(totalColleges);
+  document.getElementById('travelFooterStudents').textContent = fmt(totalStudents);
+}
+
+function renderTravelRows(groups, forceExpandKeys){
+  renderTravelTable(groups, forceExpandKeys);
+  renderTravelMobileCards(groups, forceExpandKeys);
+}
+
+/** Accordion: คลิกกลุ่มเดิมซ้ำ = หุบ, คลิกกลุ่มอื่น = หุบกลุ่มเดิมแล้วเปิดกลุ่มใหม่แทน
+    gi is the index within the CURRENTLY rendered/filtered groups list. */
+window.toggleTravelGroup = function(gi){
+  const groups = window.__lastRenderedTravelGroups || [];
+  const g = groups[gi];
+  if(!g) return;
+  openTravelGroupKey = (openTravelGroupKey === g.thaiCollege) ? null : g.thaiCollege;
+  renderTravelTab(chinaTravelData);
+};
+
+function renderTravelTab(data){
+  renderTravelKpis(data);
+  const allGroups = buildTravelGroups(data);
+  const q = document.getElementById('travelSearchBox').value.trim().toLowerCase();
+  const forceExpandKeys = new Set();
+  let visibleGroups = allGroups;
+  if(q){
+    visibleGroups = allGroups.filter(g => {
+      const thaiMatch = g.thaiCollege.toLowerCase().includes(q);
+      const cnMatches = g.items.some(item => (item.cnCollege||'').toLowerCase().includes(q));
+      if(cnMatches) forceExpandKeys.add(g.thaiCollege);
+      return thaiMatch || cnMatches;
+    });
+  }
+  window.__lastRenderedTravelGroups = visibleGroups;
+  renderTravelRows(visibleGroups, forceExpandKeys);
+  renderTravelFooter(allGroups);
+}
+
+document.getElementById('travelSearchBox').addEventListener('input', () => {
+  renderTravelTab(chinaTravelData);
+});
+
+
+/** ----- detail panel (accordion) ----- */
+function detailHtml(r){
+  const allOrgs = [
+    [r[COL.partyAth], r[COL.typeA]],
+    [r[COL.partyBth], r[COL.typeB]],
+    [r[COL.partyAch], r[COL.typeAch]],
+    [r[COL.partyBch], r[COL.typeBch]]
+  ].filter(x => x[0]);
+
+  return `
+  <div class="grid grid-cols-1 md:grid-cols-3 gap-3 py-2 px-1 pb-4">
+    <div class="bg-white border border-bordc rounded-xl px-5 py-4.5">
+      <h4 class="text-sm font-bold text-inksoft border-b border-bordc pb-2 mb-3">ข้อมูลความร่วมมือ</h4>
+      <p class="text-xs font-bold uppercase tracking-wide text-inksoft mb-1">ประเภท</p>
+      <p class="text-[13px] text-inksoft mb-3">${esc(r[COL.docType])||'-'}</p>
+      <div class="grid grid-cols-[150px_1fr] gap-x-3 gap-y-1.5 text-[15px] py-1 items-baseline">
+        <span class="text-inksoft">วันที่ลงนาม</span><span class="text-right font-medium">${formatDate(r[COL.signDate])}</span>
+        <span class="text-inksoft">ระยะเวลา</span><span class="text-right font-medium">${esc(r[COL.duration])||'-'}</span>
+        <span class="text-inksoft">ระดับ</span><span class="text-right font-medium">${esc(r[COL.level])||'-'}</span>
+        <span class="text-inksoft">ผ่านความเห็นชอบ สอศ.</span><span class="text-right font-medium">${esc(r[COL.approved])||'-'}</span>
+      </div>
+      <p class="text-[13px] text-inksoft mt-3 mb-1.5">หน่วยงานคู่ความร่วมมือ (${allOrgs.length}):</p>
+      ${allOrgs.map(o=>orgBadge(o[0], o[1])).join('') || '<p class="text-sm text-inksoft">-</p>'}
+    </div>
+    <div class="bg-white border border-bordc rounded-xl px-5 py-4.5">
+      <h4 class="text-sm font-bold text-inksoft border-b border-bordc pb-2 mb-3">ขอบเขตความร่วมมือ</h4>
+      <p class="text-[13px] font-semibold text-inksoft mb-1">กิจกรรม</p>
+      <div class="flex flex-wrap gap-1.5 mb-3">${splitMulti(r[COL.activity]).map(scopePill).join('') || '<span class="text-sm text-inksoft">-</span>'}</div>
+      <p class="text-[13px] font-semibold text-inksoft mb-1">สาขาวิชา</p>
+      <div class="flex flex-wrap gap-1.5 mb-3">${splitMulti(r[COL.subject]).map(scopePill).join('') || '<span class="text-sm text-inksoft">-</span>'}</div>
+      <p class="text-[13px] font-semibold text-inksoft mb-1">ระดับการศึกษา</p>
+      <div class="flex flex-wrap gap-1.5">${splitMulti(r[COL.eduLevel]).map(scopePill).join('') || '<span class="text-sm text-inksoft">-</span>'}</div>
+    </div>
+    <div class="bg-white border border-bordc rounded-xl px-5 py-4.5">
+      <h4 class="text-sm font-bold text-inksoft border-b border-bordc pb-2 mb-3">ผู้เรียนภายใต้ความร่วมมือ</h4>
+      <p class="text-xs font-bold uppercase tracking-wide text-inksoft mb-1">จำนวนนักศึกษา</p>
+      ${statTable([['นักศึกษา ปวช.', r[COL.puvch]], ['นักศึกษา ปวส.', r[COL.puvs]], ['นักศึกษา ป.ตรี', r[COL.pubtri]]])}
+      <p class="text-xs font-bold uppercase tracking-wide text-inksoft mt-3.5 mb-1">รายละเอียด</p>
+      ${statTable([
+        ['ทุนระยะสั้น', r[COL.scholarShort]], ['ทุนระยะยาว', r[COL.scholarLong]], ['ทวิวุฒิ', r[COL.dual]],
+        ['ฝึกงานในจีน', r[COL.internCn]], ['ฝึกงาน บ.จีนในไทย', r[COL.internCnTh]], ['ทวิภาคี', r[COL.bilateral]],
+      ])}
+    </div>
+    <div class="bg-white border border-bordc rounded-xl px-5 py-4.5">
+      <h4 class="text-sm font-bold text-inksoft border-b border-bordc pb-2 mb-3">ระดับภาษาจีน (HSK)</h4>
+      ${statTable([['HSK 1', r[COL.hsk1]], ['HSK 2', r[COL.hsk2]], ['HSK 3', r[COL.hsk3]], ['HSK 4', r[COL.hsk4]], ['HSK 5', r[COL.hsk5]], ['HSK 6', r[COL.hsk6]]])}
+    </div>
+    <div class="bg-white border border-bordc rounded-xl px-5 py-4.5">
+      <h4 class="text-sm font-bold text-inksoft border-b border-bordc pb-2 mb-3">ผู้สำเร็จการศึกษา</h4>
+      ${statTable([['ทำงานในจีน', r[COL.workCn]], ['ทำงาน บ.จีนในไทย', r[COL.workCnTh]], ['ศึกษาต่อ', r[COL.further]]])}
+    </div>
+    <div class="bg-white border border-bordc rounded-xl px-5 py-4.5">
+      <h4 class="text-sm font-bold text-inksoft border-b border-bordc pb-2 mb-3">บุคลากรครู</h4>
+      ${statTable([['ครูสัญชาติจีน', r[COL.teacherCn]], ['ครูไทยด้านภาษาจีน', r[COL.teacherTh]]])}
+    </div>
+  </div>`;
+}
+
+/** Desktop/tablet <table> rows (md and up). Columns keep whitespace-nowrap on
+    the narrow fixed-width cells, and break-words + generous padding on the
+    cells that hold long titles/institution names so words wrap normally
+    instead of squishing or breaking letter-by-letter. */
+function renderTable(rows){
+  openDetailIdx = null;
+  const tbody = document.getElementById('tbody');
+  if(rows.length === 0){
+    tbody.innerHTML = '<tr><td colspan="8" class="text-center text-inksoft p-10">ไม่พบข้อมูลที่ค้นหา</td></tr>';
+    return;
+  }
+  tbody.innerHTML = rows.map((r,i) => {
+    const code = String(r[COL.no]).padStart(3, '0');
+    const meta = statusMeta(r[COL.status]);
+    const hasPdf = !!r[COL.pdf];
+    return `
+    <tr class="row cursor-pointer hover:bg-[#FAFAF3] border-t border-bordc" data-idx="${i}" role="button" tabindex="0" aria-expanded="false">
+      <td class="p-3 whitespace-nowrap"><span class="chevron inline-block text-inksoft transition-transform">›</span></td>
+      <td class="p-3 whitespace-nowrap"><span class="font-bold text-accent">${code}</span></td>
+      <td class="p-3 whitespace-nowrap">${hasPdf
+        ? '<a class="text-accent" href="'+esc(r[COL.pdf])+'" target="_blank" rel="noopener" onclick="event.stopPropagation()" title="ดาวน์โหลดเอกสาร">'+PDF_ICON+'</a>'
+        : '<span class="text-[#C9C6B8]" title="ไม่มีไฟล์แนบ">'+PDF_ICON+'</span>'}</td>
+      <td class="p-4 align-top break-words whitespace-normal"><p class="font-semibold text-[15px] leading-snug mb-0.5 break-words">${esc(r[COL.name])}</p><p class="text-xs text-inksoft break-words">${esc(r[COL.docType])||''}</p></td>
+      <td class="p-4 align-top break-words whitespace-normal">${orgBadge(r[COL.partyAth], r[COL.typeA]) + orgBadge(r[COL.partyBth], r[COL.typeB])}</td>
+      <td class="p-4 align-top break-words whitespace-normal">${orgBadge(r[COL.partyAch], r[COL.typeAch]) + orgBadge(r[COL.partyBch], r[COL.typeBch])}</td>
+      <td class="p-3 align-top whitespace-nowrap text-sm">${DEFAULT_COUNTRY}</td>
+      <td class="p-3 align-top whitespace-nowrap"><span class="inline-flex items-center gap-1.5 text-[13px] font-bold px-3.5 py-1.5 rounded-full ${meta.cls}"><span class="w-2 h-2 rounded-full flex-none ${meta.dot}"></span>${meta.label}</span></td>
+    </tr>
+    <tr class="detail hidden" data-idx="${i}"><td colspan="8" class="p-0 bg-[#FAFAF3]">${detailHtml(r)}</td></tr>
+  `;}).join('');
+
+  tbody.querySelectorAll('tr.row').forEach(tr => {
+    const activate = () => {
+      const idx = tr.getAttribute('data-idx');
+      const detailRow = tbody.querySelector('tr.detail[data-idx="' + idx + '"]');
+      const chevron = tr.querySelector('.chevron');
+      const isOpening = detailRow.classList.contains('hidden');
+
+      if(openDetailIdx !== null && openDetailIdx !== idx){
+        const prevDetail = tbody.querySelector('tr.detail[data-idx="' + openDetailIdx + '"]');
+        const prevRow = tbody.querySelector('tr.row[data-idx="' + openDetailIdx + '"]');
+        if(prevDetail) prevDetail.classList.add('hidden');
+        if(prevRow){ prevRow.querySelector('.chevron').classList.remove('rotate-90'); prevRow.setAttribute('aria-expanded','false'); }
+      }
+
+      detailRow.classList.toggle('hidden');
+      chevron.classList.toggle('rotate-90');
+      tr.setAttribute('aria-expanded', String(isOpening));
+      openDetailIdx = isOpening ? idx : null;
+    };
+    tr.addEventListener('click', activate);
+    tr.addEventListener('keydown', (e) => {
+      if(e.key === 'Enter' || e.key === ' '){ e.preventDefault(); activate(); }
+    });
+  });
+}
+
+/** Mobile card list (below md). Each row becomes a self-contained card:
+    code/type/status on one flex top row, then the MOU name and each side's
+    partner institutions stacked as full-width blocks so long names and
+    badges never overlap. Tapping a card opens the same detail panel used
+    on desktop, single-expanded like the table accordion. */
+function renderMobileCards(rows){
+  openDetailIdxMobile = null;
+  const wrap = document.getElementById('mobileCards');
+  if(rows.length === 0){
+    wrap.innerHTML = '<p class="text-center text-inksoft p-8 text-sm">ไม่พบข้อมูลที่ค้นหา</p>';
+    return;
+  }
+  wrap.innerHTML = rows.map((r,i) => {
+    const code = String(r[COL.no]).padStart(3, '0');
+    const meta = statusMeta(r[COL.status]);
+    const hasPdf = !!r[COL.pdf];
+    return `
+    <div class="mrow w-full bg-white p-4 rounded-xl shadow-sm border border-bordc mb-3 flex flex-col gap-2 cursor-pointer" data-idx="${i}" role="button" tabindex="0" aria-expanded="false">
+      <div class="flex justify-between items-center gap-2">
+        <div class="flex items-center gap-2 min-w-0">
+          <span class="font-bold text-accent text-sm whitespace-nowrap">${code}</span>
+          ${hasPdf
+            ? '<a class="text-accent flex-none" href="'+esc(r[COL.pdf])+'" target="_blank" rel="noopener" onclick="event.stopPropagation()" title="ดาวน์โหลดเอกสาร">'+PDF_ICON+'</a>'
+            : '<span class="text-[#C9C6B8] flex-none" title="ไม่มีไฟล์แนบ">'+PDF_ICON+'</span>'}
+          <span class="text-xs text-inksoft whitespace-nowrap truncate">${esc(r[COL.docType])||''}</span>
+        </div>
+        <span class="flex-none inline-flex items-center gap-1.5 text-[12px] font-bold px-2.5 py-1 rounded-full whitespace-nowrap ${meta.cls}"><span class="w-1.5 h-1.5 rounded-full flex-none ${meta.dot}"></span>${meta.label}</span>
+      </div>
+      <p class="font-semibold text-[15px] leading-snug break-words whitespace-normal w-full">${esc(r[COL.name])}</p>
+      <div class="w-full">
+        <p class="text-[11px] font-bold uppercase tracking-wide text-inksoft mb-1">หน่วยงานไทย</p>
+        <div class="break-words whitespace-normal">${orgBadge(r[COL.partyAth], r[COL.typeA]) + orgBadge(r[COL.partyBth], r[COL.typeB])}</div>
+      </div>
+      <div class="w-full">
+        <p class="text-[11px] font-bold uppercase tracking-wide text-inksoft mb-1">หน่วยงานต่างประเทศ</p>
+        <div class="break-words whitespace-normal">${orgBadge(r[COL.partyAch], r[COL.typeAch]) + orgBadge(r[COL.partyBch], r[COL.typeBch])}</div>
+      </div>
+      <div class="flex items-center justify-between pt-2 mt-1 border-t border-bordc text-xs text-inksoft">
+        <span>ประเทศ: ${DEFAULT_COUNTRY}</span>
+        <span class="chevron-m inline-block transition-transform">›</span>
+      </div>
+    </div>
+    <div class="detail-m hidden mb-3 -mt-2 rounded-xl overflow-hidden bg-[#FAFAF3] border border-bordc border-t-0" data-idx="${i}">${detailHtml(r)}</div>
+  `;}).join('');
+
+  wrap.querySelectorAll('.mrow').forEach(card => {
+    const activate = () => {
+      const idx = card.getAttribute('data-idx');
+      const detailEl = wrap.querySelector('.detail-m[data-idx="' + idx + '"]');
+      const chevron = card.querySelector('.chevron-m');
+      const isOpening = detailEl.classList.contains('hidden');
+
+      if(openDetailIdxMobile !== null && openDetailIdxMobile !== idx){
+        const prevDetail = wrap.querySelector('.detail-m[data-idx="' + openDetailIdxMobile + '"]');
+        const prevCard = wrap.querySelector('.mrow[data-idx="' + openDetailIdxMobile + '"]');
+        if(prevDetail) prevDetail.classList.add('hidden');
+        if(prevCard){ prevCard.querySelector('.chevron-m').classList.remove('rotate-90'); prevCard.setAttribute('aria-expanded','false'); }
+      }
+
+      detailEl.classList.toggle('hidden');
+      chevron.classList.toggle('rotate-90');
+      card.setAttribute('aria-expanded', String(isOpening));
+      openDetailIdxMobile = isOpening ? idx : null;
+    };
+    card.addEventListener('click', activate);
+    card.addEventListener('keydown', (e) => {
+      if(e.key === 'Enter' || e.key === ' '){ e.preventDefault(); activate(); }
+    });
+  });
+}
+
+function renderRows(rows){
+  renderTable(rows);
+  renderMobileCards(rows);
+}
+
+document.getElementById('searchBox').addEventListener('input', (e) => {
+  document.getElementById('filterIndicator').classList.add('hidden');
+  document.getElementById('filterIndicator').classList.remove('flex');
+  const q = e.target.value.trim().toLowerCase();
+  if(!q){ renderRows(ROWS); return; }
+  const filtered = ROWS.filter(r => r.join(' ').toLowerCase().includes(q));
+  renderRows(filtered);
+});
+
+renderBanners();
+
+Papa.parse(CSV_URL, {
+  download: true,
+  header: false,
+  skipEmptyLines: true,
+  complete: function(results){
+    const data = results.data.slice(1);
+    ROWS = data;
+    renderCards(ROWS);
+    renderRows(ROWS);
+  },
+  error: function(err){
+    document.getElementById('tbody').innerHTML = '<tr><td colspan="8" class="text-center text-inksoft p-10">โหลดข้อมูลไม่สำเร็จ: ' + esc(err) + '</td></tr>';
+    document.getElementById('mobileCards').innerHTML = '<p class="text-center text-inksoft p-8 text-sm">โหลดข้อมูลไม่สำเร็จ: ' + esc(err) + '</p>';
+  }
+});
+
+// ชีต 7_เดินทางจีน — คอลัมน์จริง: ลำดับ, วิทยาลัย(ไทย), จำนวน(คน), กิจกรรม, สถานศึกษาจีน
+// บางแถวลำดับว่าง (แถวต่อของวิทยาลัยเดิมที่มีพันธมิตรจีนมากกว่า 1 แห่ง) — แสดงตามที่มีได้เลย ไม่ต้องเติมเลขเอง
+Papa.parse(CSV_URL_TRAVEL, {
+  download: true,
+  header: false,
+  skipEmptyLines: true,
+  complete: function(results){
+    const rows = results.data.slice(1);
+    // Merged-cell CSV export: continuation rows (a Thai college with more
+    // than one Chinese partner) leave the Thai-college cell blank, so we
+    // forward-fill it from the last non-blank row for correct grouping.
+    // The sheet also has its own trailing "รวมทั้งสิ้น" (grand-total) row —
+    // that's a summary artifact from the spreadsheet, not a real record,
+    // so it's filtered out before it can become a phantom "college" group
+    // or get forward-filled into any row after it.
+    const SUMMARY_ROW_PATTERN = /^รวม/;
+    let lastThaiCollege = '';
+    chinaTravelData = rows
+      .filter(r => !SUMMARY_ROW_PATTERN.test((r[1] || '').trim()))
+      .map(r => {
+        const rawThai = (r[1] || '').trim();
+        if(rawThai) lastThaiCollege = rawThai;
+        return {
+          id: r[0] || '',
+          thaiCollege: rawThai || lastThaiCollege,
+          studentCount: num(r[2]),
+          travelType: r[3] || '',
+          cnCollege: r[4] || ''
+        };
+      });
+    CHINA_TRAVEL_TOTAL_STUDENTS = chinaTravelData.reduce((s,t)=>s+num(t.studentCount),0);
+    renderTravelTab(chinaTravelData);
+  },
+  error: function(err){
+    console.error('โหลดข้อมูลการเดินทางจีนไม่สำเร็จ:', err);
+    document.getElementById('travelTbody').innerHTML = '<tr><td colspan="4" class="text-center text-inksoft p-10">โหลดข้อมูลไม่สำเร็จ: ' + esc(err) + '</td></tr>';
+    document.getElementById('travelMobileCards').innerHTML = '<p class="text-center text-inksoft p-8 text-sm">โหลดข้อมูลไม่สำเร็จ: ' + esc(err) + '</p>';
+  }
+});
+
+</script>
+</body>
+</html>
