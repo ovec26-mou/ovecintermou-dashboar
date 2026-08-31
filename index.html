@@ -422,10 +422,6 @@ function renderCards(rows){
   const cnTotal = Object.keys(cnOrgType).length;
   // นับความร่วมมือที่ใกล้หมดอายุ เพื่อให้เห็นสิ่งที่ต้องรีบดำเนินการทันทีตั้งแต่หน้าแรก
   const expiringCount = rows.filter(r => r[COL.status] === 'ใกล้หมดอายุ').length;
-  // ระดับผู้ลงนามฝ่าย สอศ. (คอลัมน์ S / COL.level) — นับจำนวนความร่วมมือต่อระดับ เรียงมาก→น้อย
-  const levelCount = {};
-  rows.forEach(r => { const lv = r[COL.level]; if(lv) levelCount[lv] = (levelCount[lv]||0)+1; });
-  const levelEntries = Object.entries(levelCount).sort((a,b) => b[1]-a[1]);
 
   const iconWrap = (name, bg, ink) => '<span class="flex-none w-10 h-10 rounded-xl ' + bg + ' ' + ink + ' flex items-center justify-center"><i data-lucide="' + name + '" class="w-5 h-5"></i></span>';
   const chip = (label, onclick) => '<span onclick="' + onclick + '" class="cursor-pointer text-xs font-semibold px-3 py-1.5 rounded-full bg-[#F1EEE2] text-inksoft border border-bordc hover:bg-[#E6E2D3] hover:text-ink transition">' + label + '</span>';
@@ -455,13 +451,6 @@ function renderCards(rows){
         ${chip('เอกชน', "filterBySector('cn','priv')")}
       </div>
     </div>
-    <div class="relative bg-white border border-bordc rounded-2xl px-5 pt-5 pb-5 shadow-sm">
-      <div class="absolute top-4 right-4">${iconWrap('badge-check','bg-purple-100','text-purple-800')}</div>
-      <p class="text-sm text-inksoft font-medium mb-2.5 pr-12">ระดับผู้ลงนามฝ่าย สอศ.</p>
-      <div class="flex gap-2.5 mt-1 flex-wrap">
-        ${levelEntries.map(([label,count]) => chip(esc(label) + ' (' + fmt(count) + ')', "filterByMouLevel('" + label.replace(/'/g,"\\'") + "')")).join('') || '<span class="text-sm text-[#9C9A8F]">-</span>'}
-      </div>
-    </div>
     <div onclick="filterByStatus('ใกล้หมดอายุ')" class="relative bg-white border border-bordc rounded-2xl px-5 pt-5 pb-5 shadow-sm cursor-pointer hover:shadow-md transition">
       <div class="absolute top-4 right-4">${iconWrap('alert-triangle','bg-ambersoft','text-amberink')}</div>
       <p class="text-sm text-inksoft font-medium mb-2.5 pr-12">ใกล้หมดอายุ</p>
@@ -482,6 +471,7 @@ const BANNER_GROUPS = {
 };
 const BANNERS = [
   { key:'trend',    icon:'trending-up',     title:'แนวโน้มการลงนามรายปี',                     hint:'2019 – 2026',              group:'overview' },
+  { key:'signLevel',icon:'badge-check',     title:'ระดับผู้ลงนามฝ่าย สอศ.',                    hint:'จำแนกตามระดับผู้ลงนาม',      group:'overview' },
   { key:'status',   icon:'shield-check',    title:'สถานะความร่วมมือ',                          hint:'ปกติ / ใกล้หมดอายุ / หมดอายุ', group:'overview' },
   { key:'subject',  icon:'graduation-cap',  title:'Top สาขาวิชาที่มีความร่วมมือ',              hint:'5 อันดับแรก + อื่น ๆ',       group:'overview' },
   { key:'students', icon:'users',           title:'ผู้เรียนภายใต้ความร่วมมือ',                  hint:'ปวช. / ปวส. / ป.ตรี',        group:'students' },
@@ -659,6 +649,31 @@ const MODAL_BUILDERS = {
               datalabels:{ display:true, color:(ctx)=>contrastTextColor(colors[ctx.dataIndex]), font:{size:10,weight:'700'},
                 formatter:(v)=>{ if(!total||v<=0) return ''; const pct=v/total*100; return pct<1?'<1%':Math.round(pct)+'%'; } } },
             onClick:(evt, els)=>{ if(!els.length) return; const l=labels[els[0].index]; filterByActivity(l, l==='อื่น ๆ', topSet); },
+            onHover:(evt, els)=>{ evt.native.target.style.cursor = els.length ? 'pointer' : 'default'; }
+          }
+        });
+      }
+    };
+  },
+  signLevel(rows){
+    const levelCount = {};
+    rows.forEach(r => { const lv = r[COL.level]; if(lv) levelCount[lv] = (levelCount[lv]||0)+1; });
+    const sorted = Object.entries(levelCount).sort((a,b)=>b[1]-a[1]);
+    const labels = sorted.map(x=>x[0]);
+    const values = sorted.map(x=>x[1]);
+    const colors = colorsForLabels(labels);
+    const total = values.reduce((a,b)=>a+b,0);
+    return {
+      title:'ระดับผู้ลงนามฝ่าย สอศ.', subtitle:'จำแนกจำนวนความร่วมมือตามระดับผู้ลงนาม',
+      bodyHtml: '<canvas id="modalChart"></canvas>' + modalTotalBadge(total, ' รายการ') + modalList(labels.map((l,i)=>({label:l, value:values[i], color:colors[i], onClick:"filterByMouLevel('"+l+"')"}))),
+      render(){
+        return new Chart(document.getElementById('modalChart'), {
+          type:'pie',
+          data:{ labels, datasets:[{data:values, backgroundColor:colors}] },
+          options:{ plugins:{ legend:{display:false},
+              datalabels:{ display:true, color:(ctx)=>contrastTextColor(colors[ctx.dataIndex]), font:{size:11,weight:'700'},
+                formatter:(v)=>{ if(!total||v<=0) return ''; const pct=v/total*100; return pct<1?'<1%':Math.round(pct)+'%'; } } },
+            onClick:(evt, els)=>{ if(!els.length) return; filterByMouLevel(labels[els[0].index]); },
             onHover:(evt, els)=>{ evt.native.target.style.cursor = els.length ? 'pointer' : 'default'; }
           }
         });
