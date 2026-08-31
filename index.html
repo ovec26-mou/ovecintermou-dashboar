@@ -471,7 +471,7 @@ const BANNER_GROUPS = {
 };
 const BANNERS = [
   { key:'trend',    icon:'trending-up',     title:'แนวโน้มการลงนามรายปี',                     hint:'2019 – 2026',              group:'overview' },
-  { key:'signLevel',icon:'badge-check',     title:'ระดับผู้ลงนามฝ่าย สอศ.',                    hint:'จำแนกตามระดับผู้ลงนาม',      group:'overview' },
+  { key:'signLevel',icon:'badge-check',     title:'ระดับความร่วมมือ',                    hint:'จำแนกตามระดับผู้ลงนาม',      group:'overview' },
   { key:'status',   icon:'shield-check',    title:'สถานะความร่วมมือ',                          hint:'ปกติ / ใกล้หมดอายุ / หมดอายุ', group:'overview' },
   { key:'subject',  icon:'graduation-cap',  title:'Top สาขาวิชาที่มีความร่วมมือ',              hint:'5 อันดับแรก + อื่น ๆ',       group:'overview' },
   { key:'students', icon:'users',           title:'ผู้เรียนภายใต้ความร่วมมือ',                  hint:'ปวช. / ปวส. / ป.ตรี',        group:'students' },
@@ -664,7 +664,7 @@ const MODAL_BUILDERS = {
     const colors = colorsForLabels(labels);
     const total = values.reduce((a,b)=>a+b,0);
     return {
-      title:'ระดับผู้ลงนามฝ่าย สอศ.', subtitle:'จำแนกจำนวนความร่วมมือตามระดับผู้ลงนาม',
+      title:'ระดับความร่วมมือ', subtitle:'จำแนกจำนวนความร่วมมือตามระดับผู้ลงนาม',
       bodyHtml: '<canvas id="modalChart"></canvas>' + modalTotalBadge(total, ' รายการ') + modalList(labels.map((l,i)=>({label:l, value:values[i], color:colors[i], onClick:"filterByMouLevel('"+l+"')"}))),
       render(){
         return new Chart(document.getElementById('modalChart'), {
