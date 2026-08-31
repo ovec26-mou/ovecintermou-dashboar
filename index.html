@@ -404,6 +404,9 @@ window.filterByActivity = function(label, others, topSet){
 window.filterByStatus = function(label){
   applyFilter('สถานะ: ' + label, r => r[COL.status] === label);
 };
+window.filterByMouLevel = function(label){
+  applyFilter('ระดับผู้ลงนาม: ' + label, r => r[COL.level] === label);
+};
 
 /** ----- top KPI row (row 1) ----- */
 function renderCards(rows){
@@ -419,6 +422,10 @@ function renderCards(rows){
   const cnTotal = Object.keys(cnOrgType).length;
   // นับความร่วมมือที่ใกล้หมดอายุ เพื่อให้เห็นสิ่งที่ต้องรีบดำเนินการทันทีตั้งแต่หน้าแรก
   const expiringCount = rows.filter(r => r[COL.status] === 'ใกล้หมดอายุ').length;
+  // ระดับผู้ลงนามฝ่าย สอศ. (คอลัมน์ S / COL.level) — นับจำนวนความร่วมมือต่อระดับ เรียงมาก→น้อย
+  const levelCount = {};
+  rows.forEach(r => { const lv = r[COL.level]; if(lv) levelCount[lv] = (levelCount[lv]||0)+1; });
+  const levelEntries = Object.entries(levelCount).sort((a,b) => b[1]-a[1]);
 
   const iconWrap = (name, bg, ink) => '<span class="flex-none w-10 h-10 rounded-xl ' + bg + ' ' + ink + ' flex items-center justify-center"><i data-lucide="' + name + '" class="w-5 h-5"></i></span>';
   const chip = (label, onclick) => '<span onclick="' + onclick + '" class="cursor-pointer text-xs font-semibold px-3 py-1.5 rounded-full bg-[#F1EEE2] text-inksoft border border-bordc hover:bg-[#E6E2D3] hover:text-ink transition">' + label + '</span>';
@@ -446,6 +453,13 @@ function renderCards(rows){
       <div class="flex gap-2.5 mt-3.5 flex-wrap">
         ${chip('ภาครัฐ', "filterBySector('cn','gov')")}
         ${chip('เอกชน', "filterBySector('cn','priv')")}
+      </div>
+    </div>
+    <div class="relative bg-white border border-bordc rounded-2xl px-5 pt-5 pb-5 shadow-sm">
+      <div class="absolute top-4 right-4">${iconWrap('badge-check','bg-purple-100','text-purple-800')}</div>
+      <p class="text-sm text-inksoft font-medium mb-2.5 pr-12">ระดับผู้ลงนามฝ่าย สอศ.</p>
+      <div class="flex gap-2.5 mt-1 flex-wrap">
+        ${levelEntries.map(([label,count]) => chip(esc(label) + ' (' + fmt(count) + ')', "filterByMouLevel('" + label.replace(/'/g,"\\'") + "')")).join('') || '<span class="text-sm text-[#9C9A8F]">-</span>'}
       </div>
     </div>
     <div onclick="filterByStatus('ใกล้หมดอายุ')" class="relative bg-white border border-bordc rounded-2xl px-5 pt-5 pb-5 shadow-sm cursor-pointer hover:shadow-md transition">
