@@ -236,7 +236,7 @@ let CHINA_TRAVEL_TOTAL_STUDENTS = 0;
 const CSV_URL_COLLEGES = "https://docs.google.com/spreadsheets/d/e/2PACX-1vR1QHqqhuGhgzsC1IkHke8mQtLuKjhHhhxWGZnHg-xIvYN0memFprQn8sSm7qYQTWNuPiR-vlUzgcbH/pub?gid=1252863755&single=true&output=csv";
 let collegeData = []; // [{no, name, province, status}]
 const COLLEGE_STATUS_ORDER = ['มีความร่วมมือ', 'ไม่มีความร่วมมือ', 'ยังไม่มีข้อมูล'];
-const COLLEGE_STATUS_COLOR = { 'มีความร่วมมือ':'#2F7A3D', 'ไม่มีความร่วมมือ':'#9C9A8F', 'ยังไม่มีข้อมูล':'#D97706' };
+const COLLEGE_STATUS_COLOR = { 'มีความร่วมมือ':'#7FB88F', 'ไม่มีความร่วมมือ':'#C4C0B0', 'ยังไม่มีข้อมูล':'#E3A85E' };
 const COLLEGE_STATUS_KEY = { 'มีความร่วมมือ':'has', 'ไม่มีความร่วมมือ':'none', 'ยังไม่มีข้อมูล':'unknown' };
 
 /** ----- helpers ----- */
@@ -513,7 +513,7 @@ const BANNERS = [
   { key:'trend',    icon:'trending-up',     title:'แนวโน้มการลงนามรายปี',                     hint:'2019 – 2026',              group:'overview' },
   { key:'signLevel',icon:'badge-check',     title:'ระดับผู้ลงนามฝ่าย สอศ.',                    hint:'จำแนกตามระดับผู้ลงนาม',      group:'overview' },
   { key:'province', icon:'map',             title:'มณฑลที่มีความร่วมมือ',                      hint:'สัดส่วนความร่วมมือตามมณฑล',   group:'overview' },
-  { key:'collegeCoverage', icon:'building-2', title:'ความครอบคลุมวิทยาลัยไทย',                 hint:'จาก 433 แห่งทั่วประเทศ',      group:'overview' },
+  { key:'collegeCoverage', icon:'building-2', title:'สถานศึกษาไทยที่มีความร่วมมือ',              hint:'จาก 433 แห่งทั่วประเทศ',      group:'overview' },
   { key:'status',   icon:'shield-check',    title:'สถานะความร่วมมือ',                          hint:'ปกติ / ใกล้หมดอายุ / หมดอายุ', group:'overview' },
   { key:'subject',  icon:'graduation-cap',  title:'Top สาขาวิชาที่มีความร่วมมือ',              hint:'5 อันดับแรก + อื่น ๆ',       group:'overview' },
   { key:'students', icon:'users',           title:'ผู้เรียนภายใต้ความร่วมมือ',                  hint:'ปวช. / ปวส. / ป.ตรี',        group:'students' },
@@ -803,7 +803,7 @@ const MODAL_BUILDERS = {
     };
 
     return {
-      title: 'ความครอบคลุมวิทยาลัยไทย',
+      title: 'สถานศึกษาไทยที่มีความร่วมมือ',
       subtitle: 'จากวิทยาลัยอาชีวศึกษาทั่วประเทศ ' + fmt(total) + ' แห่ง — คลิกที่สัดส่วนเพื่อดูรายชื่อ',
       bodyHtml: `
         <div class="flex flex-col max-h-[70vh]">
@@ -836,7 +836,7 @@ const MODAL_BUILDERS = {
     rows.forEach(r=>{ const s=r[COL.status]; if(statusCount[s]!==undefined) statusCount[s]++; });
     const labels = Object.keys(statusCount);
     const values = Object.values(statusCount);
-    const colors = ['#2F5A16','#A8790F','#9E2E2E'];
+    const colors = ['#39C7BF','#8A6328','#7A2323'];
     const total = values.reduce((a,b)=>a+b,0);
     return {
       title:'สถานะความร่วมมือ', subtitle:'ปกติ / ใกล้หมดอายุ / หมดอายุ',
