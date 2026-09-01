@@ -110,7 +110,7 @@
               <th class="text-left align-top text-[13px] font-bold text-inksoft p-3">ความร่วมมือ</th>
               <th class="text-left align-top text-[13px] font-bold text-inksoft p-3">หน่วยงานไทย</th>
               <th class="text-left align-top text-[13px] font-bold text-inksoft p-3">หน่วยงานต่างประเทศ</th>
-              <th class="w-[70px] text-left align-top whitespace-nowrap text-[13px] font-bold text-inksoft p-3">มณฑล</th>
+              <th class="w-[110px] text-left align-top text-[13px] font-bold text-inksoft p-3">มณฑล</th>
               <th class="w-[130px] text-left align-top whitespace-nowrap text-[13px] font-bold text-inksoft p-3">สถานะ</th>
             </tr>
           </thead>
@@ -213,8 +213,11 @@ const COL = {
 const PDF_ICON = '<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path><polyline points="14 2 14 8 20 8"></polyline><line x1="12" y1="18" x2="12" y2="12"></line><line x1="9" y1="15" x2="15" y2="15"></line></svg>';
 
 // มณฑล (province) ของคู่สัญญาจีนฝั่ง A/B — ใช้แทนคอลัมน์ "ประเทศ" เดิมที่ hardcode เป็น "จีน"
+function getProvinces(r){
+  return [...new Set([r[COL.mzA], r[COL.mzB]].map(v => (v||'').trim()).filter(Boolean))];
+}
 function provinceDisplay(r){
-  const provinces = [...new Set([r[COL.mzA], r[COL.mzB]].map(v => (v||'').trim()).filter(Boolean))];
+  const provinces = getProvinces(r);
   return provinces.length ? provinces.join(' / ') : DEFAULT_COUNTRY;
 }
 
@@ -413,6 +416,13 @@ window.filterByStatus = function(label){
 window.filterByMouLevel = function(label){
   applyFilter('ระดับผู้ลงนาม: ' + label, r => r[COL.level] === label);
 };
+window.filterByProvince = function(label, others, topSet){
+  if(others){
+    applyFilter('มณฑล: อื่น ๆ', r => getProvinces(r).some(p => !topSet.has(p)));
+  } else {
+    applyFilter('มณฑล: ' + label, r => getProvinces(r).includes(label));
+  }
+};
 
 /** ----- top KPI row (row 1) ----- */
 function renderCards(rows){
@@ -478,6 +488,7 @@ const BANNER_GROUPS = {
 const BANNERS = [
   { key:'trend',    icon:'trending-up',     title:'แนวโน้มการลงนามรายปี',                     hint:'2019 – 2026',              group:'overview' },
   { key:'signLevel',icon:'badge-check',     title:'ระดับผู้ลงนามฝ่าย สอศ.',                    hint:'จำแนกตามระดับผู้ลงนาม',      group:'overview' },
+  { key:'province', icon:'map',             title:'มณฑลที่มีความร่วมมือ',                      hint:'สัดส่วนความร่วมมือตามมณฑล',   group:'overview' },
   { key:'status',   icon:'shield-check',    title:'สถานะความร่วมมือ',                          hint:'ปกติ / ใกล้หมดอายุ / หมดอายุ', group:'overview' },
   { key:'subject',  icon:'graduation-cap',  title:'Top สาขาวิชาที่มีความร่วมมือ',              hint:'5 อันดับแรก + อื่น ๆ',       group:'overview' },
   { key:'students', icon:'users',           title:'ผู้เรียนภายใต้ความร่วมมือ',                  hint:'ปวช. / ปวส. / ป.ตรี',        group:'students' },
@@ -680,6 +691,66 @@ const MODAL_BUILDERS = {
               datalabels:{ display:true, color:(ctx)=>contrastTextColor(colors[ctx.dataIndex]), font:{size:11,weight:'700'},
                 formatter:(v)=>{ if(!total||v<=0) return ''; const pct=v/total*100; return pct<1?'<1%':Math.round(pct)+'%'; } } },
             onClick:(evt, els)=>{ if(!els.length) return; filterByMouLevel(labels[els[0].index]); },
+            onHover:(evt, els)=>{ evt.native.target.style.cursor = els.length ? 'pointer' : 'default'; }
+          }
+        });
+      }
+    };
+  },
+  province(rows){
+    const provinceCount = {};
+    rows.forEach(r => getProvinces(r).forEach(p => { provinceCount[p] = (provinceCount[p]||0)+1; }));
+    const allEntries = Object.entries(provinceCount).filter(x=>x[1]>0).sort((a,b)=>b[1]-a[1]);
+    const totalAll = allEntries.reduce((s,x)=>s+x[1],0);
+
+    const MIN_SHOWN = 7, MAX_SHOWN = 9, OTHERS_CAP_RATIO = 0.25;
+    let shownCount = Math.min(MIN_SHOWN, allEntries.length);
+    while(shownCount < Math.min(MAX_SHOWN, allEntries.length)){
+      const shownSum = allEntries.slice(0, shownCount).reduce((s,x)=>s+x[1], 0);
+      if(totalAll - shownSum <= totalAll * OTHERS_CAP_RATIO) break;
+      shownCount++;
+    }
+
+    const top = allEntries.slice(0, shownCount);
+    const rest = allEntries.slice(shownCount);
+    const topSet = new Set(top.map(x=>x[0]));
+    const othersCount = rest.reduce((s,x)=>s+x[1],0);
+
+    const labels = top.map(x=>x[0]).concat(othersCount>0 ? ['อื่น ๆ'] : []);
+    const values = top.map(x=>x[1]).concat(othersCount>0 ? [othersCount] : []);
+    const total = totalAll;
+    const colors = activityColors(labels);
+
+    const pctText = (v) => { if(!total || v<=0) return '0%'; const p = v/total*100; return (p<1 ? '<1' : Math.round(p)) + '%'; };
+
+    const topRows = top.map((e,i) => activityLegendRow(e[0], e[1], pctText(e[1]), colors[i], "filterByProvince('"+e[0]+"')"));
+    const otherRows = rest.map(e => activityLegendRow(e[0], e[1], pctText(e[1]), '#9C9A8F', "filterByProvince('"+e[0]+"')"));
+    const legendHtml = '<div class="divide-y divide-bordc">' + topRows.join('') +
+      (rest.length ? '<div class="px-1 pt-3 pb-1.5 text-[11px] font-bold uppercase tracking-wide text-inksoft">อื่น ๆ แยกตามมณฑล (' + rest.length + ' มณฑล)</div>' + otherRows.join('') : '') +
+      '</div>';
+
+    return {
+      title: 'มณฑลที่มีความร่วมมือ',
+      subtitle: 'Top ' + shownCount + ' มณฑล' + (rest.length ? ' + อื่น ๆ อีก ' + rest.length + ' มณฑล' : ''),
+      bodyHtml: `
+        <div class="flex flex-col max-h-[70vh]">
+          <div class="flex-none">
+            <canvas id="modalChart"></canvas>
+            ${modalTotalBadge(total, ' รายการ')}
+          </div>
+          <div class="flex-1 min-h-0 overflow-y-auto mt-2 border-t border-bordc pr-1">
+            ${legendHtml}
+          </div>
+        </div>`,
+      render(){
+        window.__provinceTopSet = topSet;
+        return new Chart(document.getElementById('modalChart'), {
+          type:'doughnut',
+          data:{ labels, datasets:[{ data:values, backgroundColor:colors }] },
+          options:{ plugins:{ legend:{display:false},
+              datalabels:{ display:true, color:(ctx)=>contrastTextColor(colors[ctx.dataIndex]), font:{size:10,weight:'700'},
+                formatter:(v)=>{ if(!total||v<=0) return ''; const pct=v/total*100; return pct<1?'<1%':Math.round(pct)+'%'; } } },
+            onClick:(evt, els)=>{ if(!els.length) return; const l=labels[els[0].index]; filterByProvince(l, l==='อื่น ๆ', topSet); },
             onHover:(evt, els)=>{ evt.native.target.style.cursor = els.length ? 'pointer' : 'default'; }
           }
         });
@@ -1221,7 +1292,7 @@ function renderTable(rows){
       <td class="p-4 align-top break-words whitespace-normal"><p class="font-semibold text-[15px] leading-snug mb-0.5 break-words">${esc(r[COL.name])}</p><p class="text-xs text-inksoft break-words">${esc(r[COL.docType])||''}</p></td>
       <td class="p-4 align-top break-words whitespace-normal">${orgBadge(r[COL.partyAth], r[COL.typeA]) + orgBadge(r[COL.partyBth], r[COL.typeB])}</td>
       <td class="p-4 align-top break-words whitespace-normal">${orgBadge(r[COL.partyAch], r[COL.typeAch]) + orgBadge(r[COL.partyBch], r[COL.typeBch])}</td>
-      <td class="p-3 align-top whitespace-nowrap text-sm">${esc(provinceDisplay(r))}</td>
+      <td class="p-3 align-top text-sm break-words whitespace-normal">${esc(provinceDisplay(r))}</td>
       <td class="p-3 align-top whitespace-nowrap"><span class="inline-flex items-center gap-1.5 text-[13px] font-bold px-3.5 py-1.5 rounded-full ${meta.cls}"><span class="w-2 h-2 rounded-full flex-none ${meta.dot}"></span>${meta.label}</span></td>
     </tr>
     <tr class="detail hidden" data-idx="${i}"><td colspan="8" class="p-0 bg-[#FAFAF3]">${detailHtml(r)}</td></tr>
