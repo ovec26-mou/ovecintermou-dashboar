@@ -69,11 +69,11 @@
   <div id="tabBar" class="flex gap-1.5 border-b border-bordc mb-6">
     <button id="tabBtnOverview" onclick="switchTab('overview')"
       class="tab-btn px-4 sm:px-5 py-3 text-[13px] sm:text-sm font-bold border-b-2 -mb-px transition text-accent border-accent">
-      ภาพรวมความร่วมมือ (Overview)
+      คลังความร่วมมือจีน
     </button>
     <button id="tabBtnTravel" onclick="switchTab('travel')"
       class="tab-btn px-4 sm:px-5 py-3 text-[13px] sm:text-sm font-bold border-b-2 -mb-px transition text-inksoft border-transparent hover:text-ink">
-      ข้อมูลการเดินทางศึกษาต่อและฝึกอบรม ณ ประเทศจีน
+      ข้อมูลผู้เรียนฝึกอบรมประเทศจีน
     </button>
   </div>
 
@@ -110,7 +110,7 @@
               <th class="text-left align-top text-[13px] font-bold text-inksoft p-3">ความร่วมมือ</th>
               <th class="text-left align-top text-[13px] font-bold text-inksoft p-3">หน่วยงานไทย</th>
               <th class="text-left align-top text-[13px] font-bold text-inksoft p-3">หน่วยงานต่างประเทศ</th>
-              <th class="w-[70px] text-left align-top whitespace-nowrap text-[13px] font-bold text-inksoft p-3">ประเทศ</th>
+              <th class="w-[70px] text-left align-top whitespace-nowrap text-[13px] font-bold text-inksoft p-3">มณฑล</th>
               <th class="w-[130px] text-left align-top whitespace-nowrap text-[13px] font-bold text-inksoft p-3">สถานะ</th>
             </tr>
           </thead>
@@ -211,6 +211,12 @@ const COL = {
 };
 
 const PDF_ICON = '<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path><polyline points="14 2 14 8 20 8"></polyline><line x1="12" y1="18" x2="12" y2="12"></line><line x1="9" y1="15" x2="15" y2="15"></line></svg>';
+
+// มณฑล (province) ของคู่สัญญาจีนฝั่ง A/B — ใช้แทนคอลัมน์ "ประเทศ" เดิมที่ hardcode เป็น "จีน"
+function provinceDisplay(r){
+  const provinces = [...new Set([r[COL.mzA], r[COL.mzB]].map(v => (v||'').trim()).filter(Boolean))];
+  return provinces.length ? provinces.join(' / ') : DEFAULT_COUNTRY;
+}
 
 /** ----- Student China Travel Tracking (mock dataset) -----
     Standalone dataset (not sourced from the CSV) describing students who
@@ -435,7 +441,7 @@ function renderCards(rows){
     </div>
     <div class="relative bg-white border border-bordc rounded-2xl px-5 pt-5 pb-5 shadow-sm">
       <div class="absolute top-4 right-4">${iconWrap('school','bg-blue-100','text-blue-800')}</div>
-      <p class="text-sm text-inksoft font-medium mb-2.5 pr-12">หน่วยงานไทย</p>
+      <p class="text-sm text-inksoft font-medium mb-2.5 pr-12">สถานศึกษาไทย</p>
       <p class="text-3xl font-bold text-[#0F172A]">${fmt(thaiTotal)}</p>
       <div class="flex gap-2.5 mt-3.5 flex-wrap">
         ${chip('ภาครัฐ', "filterBySector('th','gov')")}
@@ -471,7 +477,7 @@ const BANNER_GROUPS = {
 };
 const BANNERS = [
   { key:'trend',    icon:'trending-up',     title:'แนวโน้มการลงนามรายปี',                     hint:'2019 – 2026',              group:'overview' },
-  { key:'signLevel',icon:'badge-check',     title:'ระดับความร่วมมือ',                    hint:'จำแนกตามระดับผู้ลงนาม',      group:'overview' },
+  { key:'signLevel',icon:'badge-check',     title:'ระดับผู้ลงนามฝ่าย สอศ.',                    hint:'จำแนกตามระดับผู้ลงนาม',      group:'overview' },
   { key:'status',   icon:'shield-check',    title:'สถานะความร่วมมือ',                          hint:'ปกติ / ใกล้หมดอายุ / หมดอายุ', group:'overview' },
   { key:'subject',  icon:'graduation-cap',  title:'Top สาขาวิชาที่มีความร่วมมือ',              hint:'5 อันดับแรก + อื่น ๆ',       group:'overview' },
   { key:'students', icon:'users',           title:'ผู้เรียนภายใต้ความร่วมมือ',                  hint:'ปวช. / ปวส. / ป.ตรี',        group:'students' },
@@ -664,7 +670,7 @@ const MODAL_BUILDERS = {
     const colors = colorsForLabels(labels);
     const total = values.reduce((a,b)=>a+b,0);
     return {
-      title:'ระดับความร่วมมือ', subtitle:'จำแนกจำนวนความร่วมมือตามระดับผู้ลงนาม',
+      title:'ระดับผู้ลงนามฝ่าย สอศ.', subtitle:'จำแนกจำนวนความร่วมมือตามระดับผู้ลงนาม',
       bodyHtml: '<canvas id="modalChart"></canvas>' + modalTotalBadge(total, ' รายการ') + modalList(labels.map((l,i)=>({label:l, value:values[i], color:colors[i], onClick:"filterByMouLevel('"+l+"')"}))),
       render(){
         return new Chart(document.getElementById('modalChart'), {
@@ -1215,7 +1221,7 @@ function renderTable(rows){
       <td class="p-4 align-top break-words whitespace-normal"><p class="font-semibold text-[15px] leading-snug mb-0.5 break-words">${esc(r[COL.name])}</p><p class="text-xs text-inksoft break-words">${esc(r[COL.docType])||''}</p></td>
       <td class="p-4 align-top break-words whitespace-normal">${orgBadge(r[COL.partyAth], r[COL.typeA]) + orgBadge(r[COL.partyBth], r[COL.typeB])}</td>
       <td class="p-4 align-top break-words whitespace-normal">${orgBadge(r[COL.partyAch], r[COL.typeAch]) + orgBadge(r[COL.partyBch], r[COL.typeBch])}</td>
-      <td class="p-3 align-top whitespace-nowrap text-sm">${DEFAULT_COUNTRY}</td>
+      <td class="p-3 align-top whitespace-nowrap text-sm">${esc(provinceDisplay(r))}</td>
       <td class="p-3 align-top whitespace-nowrap"><span class="inline-flex items-center gap-1.5 text-[13px] font-bold px-3.5 py-1.5 rounded-full ${meta.cls}"><span class="w-2 h-2 rounded-full flex-none ${meta.dot}"></span>${meta.label}</span></td>
     </tr>
     <tr class="detail hidden" data-idx="${i}"><td colspan="8" class="p-0 bg-[#FAFAF3]">${detailHtml(r)}</td></tr>
@@ -1285,7 +1291,7 @@ function renderMobileCards(rows){
         <div class="break-words whitespace-normal">${orgBadge(r[COL.partyAch], r[COL.typeAch]) + orgBadge(r[COL.partyBch], r[COL.typeBch])}</div>
       </div>
       <div class="flex items-center justify-between pt-2 mt-1 border-t border-bordc text-xs text-inksoft">
-        <span>ประเทศ: ${DEFAULT_COUNTRY}</span>
+        <span>มณฑล: ${esc(provinceDisplay(r))}</span>
         <span class="chevron-m inline-block transition-transform">›</span>
       </div>
     </div>
