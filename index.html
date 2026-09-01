@@ -836,7 +836,7 @@ const MODAL_BUILDERS = {
     rows.forEach(r=>{ const s=r[COL.status]; if(statusCount[s]!==undefined) statusCount[s]++; });
     const labels = Object.keys(statusCount);
     const values = Object.values(statusCount);
-    const colors = ['#39C7BF','#8A6328','#7A2323'];
+    const colors = ['#BEEAE4','#F3E2C4','#F3D3D3'];
     const total = values.reduce((a,b)=>a+b,0);
     return {
       title:'สถานะความร่วมมือ', subtitle:'ปกติ / ใกล้หมดอายุ / หมดอายุ',
