@@ -278,6 +278,17 @@ function orgBadge(name, type){
     (type ? '<span class="inline-block flex-none text-[11px] font-bold px-2 py-0.5 rounded-full whitespace-nowrap ' + badgeCls + '">' + esc(type) + '</span>' : '') +
     '<span class="text-sm leading-snug">' + esc(name) + '</span></div>';
 }
+// แสดงมณฑลของคู่สัญญาจีนแต่ละราย เรียงลำดับเดียวกับ orgBadge (party A ก่อน B) และใช้ spacing
+// เดียวกัน (mb-1.5) เพื่อให้บรรทัดมณฑลตรงกับบรรทัดชื่อหน่วยงานในคอลัมน์ข้างเคียง
+function provinceRow(text){
+  return '<div class="flex items-baseline mb-1.5 last:mb-0"><span class="text-sm leading-snug">' + esc(text || '-') + '</span></div>';
+}
+function provinceCell(r){
+  const rows = [];
+  if(r[COL.partyAch]) rows.push(provinceRow(r[COL.mzA]));
+  if(r[COL.partyBch]) rows.push(provinceRow(r[COL.mzB]));
+  return rows.join('') || provinceRow(DEFAULT_COUNTRY);
+}
 function scopePill(text){
   return '<span class="inline-block text-xs font-semibold px-2.5 py-1 rounded-full bg-fuchsia-50 text-fuchsia-900 border border-fuchsia-100">' + esc(text) + '</span>';
 }
@@ -702,15 +713,9 @@ const MODAL_BUILDERS = {
     rows.forEach(r => getProvinces(r).forEach(p => { provinceCount[p] = (provinceCount[p]||0)+1; }));
     const allEntries = Object.entries(provinceCount).filter(x=>x[1]>0).sort((a,b)=>b[1]-a[1]);
     const totalAll = allEntries.reduce((s,x)=>s+x[1],0);
+    const uniqueProvinceCount = allEntries.length; // จำนวนมณฑลที่มีความร่วมมือ (ชื่อไม่ซ้ำ)
 
-    const MIN_SHOWN = 7, MAX_SHOWN = 9, OTHERS_CAP_RATIO = 0.25;
-    let shownCount = Math.min(MIN_SHOWN, allEntries.length);
-    while(shownCount < Math.min(MAX_SHOWN, allEntries.length)){
-      const shownSum = allEntries.slice(0, shownCount).reduce((s,x)=>s+x[1], 0);
-      if(totalAll - shownSum <= totalAll * OTHERS_CAP_RATIO) break;
-      shownCount++;
-    }
-
+    const shownCount = Math.min(5, allEntries.length);
     const top = allEntries.slice(0, shownCount);
     const rest = allEntries.slice(shownCount);
     const topSet = new Set(top.map(x=>x[0]));
@@ -736,7 +741,6 @@ const MODAL_BUILDERS = {
         <div class="flex flex-col max-h-[70vh]">
           <div class="flex-none">
             <canvas id="modalChart"></canvas>
-            ${modalTotalBadge(total, ' รายการ')}
           </div>
           <div class="flex-1 min-h-0 overflow-y-auto mt-2 border-t border-bordc pr-1">
             ${legendHtml}
@@ -749,10 +753,12 @@ const MODAL_BUILDERS = {
           data:{ labels, datasets:[{ data:values, backgroundColor:colors }] },
           options:{ plugins:{ legend:{display:false},
               datalabels:{ display:true, color:(ctx)=>contrastTextColor(colors[ctx.dataIndex]), font:{size:10,weight:'700'},
-                formatter:(v)=>{ if(!total||v<=0) return ''; const pct=v/total*100; return pct<1?'<1%':Math.round(pct)+'%'; } } },
+                formatter:(v)=>{ if(!total||v<=0) return ''; const pct=v/total*100; return pct<1?'<1%':Math.round(pct)+'%'; } },
+              centerText:{ display:true, text:fmt(uniqueProvinceCount), subtext:'มณฑลที่มีความร่วมมือ', color:'#0F172A' } },
             onClick:(evt, els)=>{ if(!els.length) return; const l=labels[els[0].index]; filterByProvince(l, l==='อื่น ๆ', topSet); },
             onHover:(evt, els)=>{ evt.native.target.style.cursor = els.length ? 'pointer' : 'default'; }
-          }
+          },
+          plugins:[centerTextPlugin]
         });
       }
     };
@@ -1292,7 +1298,7 @@ function renderTable(rows){
       <td class="p-4 align-top break-words whitespace-normal"><p class="font-semibold text-[15px] leading-snug mb-0.5 break-words">${esc(r[COL.name])}</p><p class="text-xs text-inksoft break-words">${esc(r[COL.docType])||''}</p></td>
       <td class="p-4 align-top break-words whitespace-normal">${orgBadge(r[COL.partyAth], r[COL.typeA]) + orgBadge(r[COL.partyBth], r[COL.typeB])}</td>
       <td class="p-4 align-top break-words whitespace-normal">${orgBadge(r[COL.partyAch], r[COL.typeAch]) + orgBadge(r[COL.partyBch], r[COL.typeBch])}</td>
-      <td class="p-3 align-top text-sm break-words whitespace-normal">${esc(provinceDisplay(r))}</td>
+      <td class="p-3 align-top text-sm break-words whitespace-normal">${provinceCell(r)}</td>
       <td class="p-3 align-top whitespace-nowrap"><span class="inline-flex items-center gap-1.5 text-[13px] font-bold px-3.5 py-1.5 rounded-full ${meta.cls}"><span class="w-2 h-2 rounded-full flex-none ${meta.dot}"></span>${meta.label}</span></td>
     </tr>
     <tr class="detail hidden" data-idx="${i}"><td colspan="8" class="p-0 bg-[#FAFAF3]">${detailHtml(r)}</td></tr>
