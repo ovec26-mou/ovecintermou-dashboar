@@ -11,18 +11,18 @@
     theme: {
       extend: {
         colors: {
-          cream: '#F5F1E6',
-          ink: '#242420',
-          inksoft: '#54534C',
-          bordc: '#E2DDCE',
-          headbg: '#E8EFDC',
-          accent: '#2F5A16',
-          accentdark: '#24450F',
-          accentsoft: '#DCEACB',
-          herobg: '#FCF0CE',
-          herobd: '#EBD79A',
-          amberink: '#7A4E0A',
-          ambersoft: '#F5DFB0',
+          cream: '#F0FBF9',
+          ink: '#091E1B',
+          inksoft: '#4B6B67',
+          bordc: '#D3EDEA',
+          headbg: '#DFF3F0',
+          accent: '#39C7BF',
+          accentdark: '#229990',
+          accentsoft: '#CDF1EE',
+          herobg: '#FBF0DE',
+          herobd: '#E9CFA0',
+          amberink: '#8A6328',
+          ambersoft: '#F3E2C4',
           redink: '#7A2323',
           redsoft: '#F3D3D3',
         },
@@ -48,7 +48,7 @@
   .fade-in { animation: fadeIn .15s ease-out; }
   @keyframes fadeIn { from { opacity: 0; transform: translateY(6px); } to { opacity: 1; transform: translateY(0); } }
   ::-webkit-scrollbar { width: 8px; height: 8px; }
-  ::-webkit-scrollbar-thumb { background: #D8D3C2; border-radius: 8px; }
+  ::-webkit-scrollbar-thumb { background: #BFE3DE; border-radius: 8px; }
   @media (prefers-reduced-motion: reduce) {
     html { scroll-behavior: auto; }
     .fade-in { animation: none; }
@@ -83,7 +83,7 @@
     <div id="bannerGrid" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 mb-8"></div>
 
     <!-- ===== Filter indicator ===== -->
-    <div id="filterIndicator" class="hidden items-center gap-3 bg-accentsoft border border-[#C9DDB2] rounded-xl px-4 py-2.5 mb-4 text-sm text-accent">
+    <div id="filterIndicator" class="hidden items-center gap-3 bg-accentsoft border border-[#9FDCD4] rounded-xl px-4 py-2.5 mb-4 text-sm text-accent">
       <span id="filterLabel" class="font-medium"></span>
       <button onclick="clearFilter()" class="ml-auto font-bold text-accent hover:text-accentdark">✕ ล้างตัวกรอง</button>
     </div>
@@ -129,7 +129,7 @@
     <div id="travelActivityCard" class="bg-white border border-bordc rounded-2xl px-5 py-4.5 pt-5 shadow-sm mb-6"></div>
 
     <!-- Filter indicator (activity-type filter from the summary card) -->
-    <div id="travelFilterIndicator" class="hidden items-center gap-3 bg-accentsoft border border-[#C9DDB2] rounded-xl px-4 py-2.5 mb-4 text-sm text-accent">
+    <div id="travelFilterIndicator" class="hidden items-center gap-3 bg-accentsoft border border-[#9FDCD4] rounded-xl px-4 py-2.5 mb-4 text-sm text-accent">
       <span id="travelFilterLabel" class="font-medium"></span>
       <button onclick="clearTravelFilter()" class="ml-auto font-bold text-accent hover:text-accentdark">✕ ล้างตัวกรอง</button>
     </div>
@@ -272,8 +272,8 @@ function signYear(s){
 function statusMeta(s){
   if(s === 'ใกล้หมดอายุ') return {cls:'bg-ambersoft text-amberink', dot:'bg-amberink', label:s};
   if(s === 'หมดอายุ') return {cls:'bg-redsoft text-redink', dot:'bg-redink', label:s};
-  if(s === 'ปกติ') return {cls:'bg-[#CDE6B4] text-[#1E4A0C]', dot:'bg-accent', label:s};
-  return {cls:'bg-[#E7E4D8] text-inksoft', dot:'bg-inksoft', label:'-'};
+  if(s === 'ปกติ') return {cls:'bg-[#BEEAE4] text-[#0B4A44]', dot:'bg-accent', label:s};
+  return {cls:'bg-[#E3F0EE] text-inksoft', dot:'bg-inksoft', label:'-'};
 }
 
 function orgIsPriv(type){ return (type || '').indexOf('เอกชน') !== -1; }
@@ -299,7 +299,7 @@ function provinceCell(r){
   return rows.join('') || provinceRow(DEFAULT_COUNTRY);
 }
 function scopePill(text){
-  return '<span class="inline-block text-xs font-semibold px-2.5 py-1 rounded-full bg-fuchsia-50 text-fuchsia-900 border border-fuchsia-100">' + esc(text) + '</span>';
+  return '<span class="inline-block text-xs font-semibold px-2.5 py-1 rounded-full bg-[#F3E2C4] text-[#8A6328] border border-[#E9CFA0]">' + esc(text) + '</span>';
 }
 function splitMulti(v){
   return (v || '').split(/[,\n]/).map(s => s.trim()).filter(Boolean);
@@ -322,13 +322,13 @@ function contrastTextColor(hex){
   const c = (hex||'#000000').replace('#','');
   const r = parseInt(c.substr(0,2),16), g = parseInt(c.substr(2,2),16), b = parseInt(c.substr(4,2),16);
   const lum = (0.299*r + 0.587*g + 0.114*b) / 255;
-  return lum > 0.58 ? '#242420' : '#FFFFFF';
+  return lum > 0.58 ? '#091E1B' : '#FFFFFF';
 }
 const LABEL_COLOR_MAP = {};
-const COLOR_PALETTE = ['#2F5A16','#A8790F','#7A2323','#6DA84A','#855E42','#C9A227','#9E2E2E','#4A8A2E','#B75B33','#6B4226','#7A4E0A','#54534C','#8FC46E','#8B8677'];
+const COLOR_PALETTE = ['#166F68','#D8AF73','#39C7BF','#A68C3F','#7A5C30','#5DD0C7','#C49A5C','#8FE0DA','#E2DA97','#0F5C56','#ECCB95','#4F7A76','#B9C46A','#6B4B23'];
 function colorsForLabels(labels){
   return labels.map(lab => {
-    if(lab === 'อื่นๆ' || lab === 'อื่น ๆ') return '#9C9A8F';
+    if(lab === 'อื่นๆ' || lab === 'อื่น ๆ') return '#7C9A96';
     if(!(lab in LABEL_COLOR_MAP)){
       const idx = Object.keys(LABEL_COLOR_MAP).length % COLOR_PALETTE.length;
       LABEL_COLOR_MAP[lab] = COLOR_PALETTE[idx];
@@ -336,7 +336,7 @@ function colorsForLabels(labels){
     return LABEL_COLOR_MAP[lab];
   });
 }
-function hskColors(){ return ['#DCEACB','#B9D9A0','#8FC46E','#6DA84A','#4A8A2E','#2F5A16']; }
+function hskColors(){ return ['#CDF1EE','#8FE0DA','#5DD0C7','#39C7BF','#229990','#166F68']; }
 
 /** Dedicated, position-based (not history-based) palette just for the
     "activity" donut. colorsForLabels()'s shared LABEL_COLOR_MAP assigns
@@ -345,10 +345,10 @@ function hskColors(){ return ['#DCEACB','#B9D9A0','#8FC46E','#6DA84A','#4A8A2E',
     the wrap-around (e.g. both landing on a green, or both on a purple).
     Indexing straight into this list by rank avoids that: whichever
     activity ends up #1 vs #2 always gets two clearly different hues. */
-const ACTIVITY_COLORS = ['#2F5A16','#A8790F','#7A2323','#6DA84A','#855E42','#C9A227','#9E2E2E','#4A8A2E','#B75B33'];
+const ACTIVITY_COLORS = ['#166F68','#D8AF73','#39C7BF','#A68C3F','#8FE0DA','#7A5C30','#E2DA97','#C49A5C','#4F7A76'];
 function activityColors(labels){
   let i = 0;
-  return labels.map(lab => (lab === 'อื่น ๆ' || lab === 'อื่นๆ') ? '#9C9A8F' : ACTIVITY_COLORS[i++ % ACTIVITY_COLORS.length]);
+  return labels.map(lab => (lab === 'อื่น ๆ' || lab === 'อื่นๆ') ? '#7C9A96' : ACTIVITY_COLORS[i++ % ACTIVITY_COLORS.length]);
 }
 /** One legend row for the activity modal: dot + name on the left, count
     ("รายการ") + percentage on the right — e.g. "ทวิวุฒิ | 43 รายการ (13%)". */
@@ -356,7 +356,7 @@ function activityLegendRow(label, value, pctText, color, onClick){
   return `
     <button onclick="${onClick}" class="w-full flex items-center justify-between gap-3 py-2.5 px-1 text-left hover:bg-black/5 rounded-lg transition">
       <span class="flex items-center gap-2 text-sm min-w-0"><span class="flex-none w-2.5 h-2.5 rounded-sm" style="background:${color}"></span><span class="truncate">${label}</span></span>
-      <span class="flex-none text-[13px] whitespace-nowrap"><span class="font-bold text-[15px] text-[#0F172A]">${fmt(value)}</span> <span class="text-inksoft">รายการ (${pctText})</span></span>
+      <span class="flex-none text-[13px] whitespace-nowrap"><span class="font-bold text-[15px] text-[#091E1B]">${fmt(value)}</span> <span class="text-inksoft">รายการ (${pctText})</span></span>
     </button>`;
 }
 
@@ -369,12 +369,12 @@ const centerTextPlugin = {
     const { width, height, top, left } = chartArea;
     ctx.save();
     ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
-    ctx.fillStyle = opts.color || '#242420';
+    ctx.fillStyle = opts.color || '#091E1B';
     ctx.font = "700 20px -apple-system, 'Segoe UI', Sarabun, sans-serif";
     ctx.fillText(opts.text, left + width/2, top + height/2 - 6);
     if(opts.subtext){
       ctx.font = "500 11px -apple-system, 'Segoe UI', Sarabun, sans-serif";
-      ctx.fillStyle = '#54534C';
+      ctx.fillStyle = '#4B6B67';
       ctx.fillText(opts.subtext, left + width/2, top + height/2 + 12);
     }
     ctx.restore();
@@ -464,19 +464,19 @@ function renderCards(rows){
   const expiringCount = rows.filter(r => r[COL.status] === 'ใกล้หมดอายุ').length;
 
   const iconWrap = (name, bg, ink) => '<span class="flex-none w-10 h-10 rounded-xl ' + bg + ' ' + ink + ' flex items-center justify-center"><i data-lucide="' + name + '" class="w-5 h-5"></i></span>';
-  const chip = (label, onclick) => '<span onclick="' + onclick + '" class="cursor-pointer text-xs font-semibold px-3 py-1.5 rounded-full bg-[#F1EEE2] text-inksoft border border-bordc hover:bg-[#E6E2D3] hover:text-ink transition">' + label + '</span>';
+  const chip = (label, onclick) => '<span onclick="' + onclick + '" class="cursor-pointer text-xs font-semibold px-3 py-1.5 rounded-full bg-[#E3F3F1] text-inksoft border border-bordc hover:bg-[#CFEAE6] hover:text-ink transition">' + label + '</span>';
 
   document.getElementById('kpiRow1').innerHTML = `
     <div onclick="clearFilter()" class="relative bg-herobg border border-herobd rounded-2xl px-5 py-4.5 pt-5 shadow-sm cursor-pointer hover:shadow-md transition">
       <div class="absolute top-4 right-4">${iconWrap('file-text','bg-amber-100','text-amberink')}</div>
       <p class="text-sm text-inksoft font-medium mb-2.5 pr-12">ความร่วมมือทั้งหมด</p>
-      <p class="text-3xl font-bold text-[#0F172A]">${fmt(totalMou)}</p>
-      <p class="text-xs text-[#9C9A8F] mt-1">คลิกเพื่อล้างตัวกรองและแสดงทั้งหมด</p>
+      <p class="text-3xl font-bold text-[#091E1B]">${fmt(totalMou)}</p>
+      <p class="text-xs text-[#7C9A96] mt-1">คลิกเพื่อล้างตัวกรองและแสดงทั้งหมด</p>
     </div>
     <div class="relative bg-white border border-bordc rounded-2xl px-5 pt-5 pb-5 shadow-sm">
       <div class="absolute top-4 right-4">${iconWrap('school','bg-blue-100','text-blue-800')}</div>
       <p class="text-sm text-inksoft font-medium mb-2.5 pr-12">สถานศึกษาไทย</p>
-      <p class="text-3xl font-bold text-[#0F172A]">${fmt(thaiTotal)}</p>
+      <p class="text-3xl font-bold text-[#091E1B]">${fmt(thaiTotal)}</p>
       <div class="flex gap-2.5 mt-3.5 flex-wrap">
         ${chip('ภาครัฐ', "filterBySector('th','gov')")}
         ${chip('เอกชน', "filterBySector('th','priv')")}
@@ -485,7 +485,7 @@ function renderCards(rows){
     <div class="relative bg-white border border-bordc rounded-2xl px-5 pt-5 pb-5 shadow-sm">
       <div class="absolute top-4 right-4">${iconWrap('globe','bg-blue-100','text-blue-800')}</div>
       <p class="text-sm text-inksoft font-medium mb-2.5 pr-12">หน่วยงานต่างประเทศ</p>
-      <p class="text-3xl font-bold text-[#0F172A]">${fmt(cnTotal)}</p>
+      <p class="text-3xl font-bold text-[#091E1B]">${fmt(cnTotal)}</p>
       <div class="flex gap-2.5 mt-3.5 flex-wrap">
         ${chip('ภาครัฐ', "filterBySector('cn','gov')")}
         ${chip('เอกชน', "filterBySector('cn','priv')")}
@@ -494,8 +494,8 @@ function renderCards(rows){
     <div onclick="filterByStatus('ใกล้หมดอายุ')" class="relative bg-white border border-bordc rounded-2xl px-5 pt-5 pb-5 shadow-sm cursor-pointer hover:shadow-md transition">
       <div class="absolute top-4 right-4">${iconWrap('alert-triangle','bg-ambersoft','text-amberink')}</div>
       <p class="text-sm text-inksoft font-medium mb-2.5 pr-12">ใกล้หมดอายุ</p>
-      <p class="text-3xl font-bold ${expiringCount>0 ? 'text-amberink' : 'text-[#0F172A]'}">${fmt(expiringCount)}</p>
-      <p class="text-xs text-[#9C9A8F] mt-1">คลิกเพื่อดูรายการที่ต้องรีบต่ออายุ</p>
+      <p class="text-3xl font-bold ${expiringCount>0 ? 'text-amberink' : 'text-[#091E1B]'}">${fmt(expiringCount)}</p>
+      <p class="text-xs text-[#7C9A96] mt-1">คลิกเพื่อดูรายการที่ต้องรีบต่ออายุ</p>
     </div>
   `;
   lucide.createIcons();
@@ -538,7 +538,7 @@ function renderBanners(){
           <span class="block font-semibold text-[15px] leading-snug">${b.title}</span>
           <span class="block text-xs text-inksoft mt-0.5">${b.hint}</span>
         </span>
-        <i data-lucide="chevron-right" class="w-4 h-4 flex-none text-[#9C9A8F] group-hover:text-accent group-hover:translate-x-0.5 transition"></i>
+        <i data-lucide="chevron-right" class="w-4 h-4 flex-none text-[#7C9A96] group-hover:text-accent group-hover:translate-x-0.5 transition"></i>
       </button>
     `).join('');
     return `
@@ -555,7 +555,7 @@ function modalList(items){
   return '<div class="mt-4 border-t border-bordc divide-y divide-bordc">' + items.map(it => `
     <button onclick="${it.onClick}" class="w-full flex items-center justify-between gap-3 py-2.5 px-1 text-left hover:bg-black/5 rounded-lg transition ${it.value===0?'opacity-45':''}">
       <span class="flex items-center gap-2 text-sm min-w-0"><span class="flex-none w-2.5 h-2.5 rounded-sm" style="background:${it.color}"></span><span class="truncate">${esc(it.label)}</span></span>
-      <span class="flex-none font-bold text-[15px] text-[#0F172A]">${fmt(it.value)}</span>
+      <span class="flex-none font-bold text-[15px] text-[#091E1B]">${fmt(it.value)}</span>
     </button>
   `).join('') + '</div>';
 }
@@ -573,11 +573,11 @@ const MODAL_BUILDERS = {
     const years = Object.keys(yearCount);
     return {
       title: 'แนวโน้มการลงนามรายปี', subtitle: 'จำนวน MOU ที่ลงนามในแต่ละปี (2019–2026)',
-      bodyHtml: '<canvas id="modalChart"></canvas>' + modalList(years.map(y=>({label:'ปี '+y, value:yearCount[y], color:'#2F5A16', onClick:"filterByYear('"+y+"')"}))),
+      bodyHtml: '<canvas id="modalChart"></canvas>' + modalList(years.map(y=>({label:'ปี '+y, value:yearCount[y], color:'#39C7BF', onClick:"filterByYear('"+y+"')"}))),
       render(){
         return new Chart(document.getElementById('modalChart'), {
           type:'line',
-          data:{ labels:years, datasets:[{ data:years.map(y=>yearCount[y]), borderColor:'#2F5A16', backgroundColor:'#DCEACB', tension:.3, fill:true, pointRadius:4, pointHoverRadius:6 }] },
+          data:{ labels:years, datasets:[{ data:years.map(y=>yearCount[y]), borderColor:'#39C7BF', backgroundColor:'#CDF1EE', tension:.3, fill:true, pointRadius:4, pointHoverRadius:6 }] },
           options:{ plugins:{legend:{display:false}}, scales:{y:{beginAtZero:true,ticks:{stepSize:4,font:{size:11}}}, x:{ticks:{font:{size:11}}}},
             onClick:(evt, els)=>{ if(!els.length) return; filterByYear(years[els[0].index]); },
             onHover:(evt, els)=>{ evt.native.target.style.cursor = els.length ? 'pointer' : 'default'; }
@@ -601,14 +601,14 @@ const MODAL_BUILDERS = {
     const values = top.map(x=>x[1]).concat(othersCount>0 ? [othersCount] : []);
     return {
       title: 'Top สาขาวิชาที่มีความร่วมมือ', subtitle: '5 อันดับแรก รวม "อื่น ๆ"',
-      bodyHtml: '<canvas id="modalChart"></canvas>' + modalList(labels.map(l=>({label:l, value:values[labels.indexOf(l)], color:l==='อื่น ๆ' ? '#9C9A8F' : '#2F5A16', onClick:"filterBySubject('"+l+"',"+(l==='อื่น ๆ')+", window.__topSubjSet)"}))),
+      bodyHtml: '<canvas id="modalChart"></canvas>' + modalList(labels.map(l=>({label:l, value:values[labels.indexOf(l)], color:l==='อื่น ๆ' ? '#7C9A96' : '#39C7BF', onClick:"filterBySubject('"+l+"',"+(l==='อื่น ๆ')+", window.__topSubjSet)"}))),
       render(){
         window.__topSubjSet = topSet;
         return new Chart(document.getElementById('modalChart'), {
           type:'bar',
-          data:{ labels, datasets:[{ data:values, backgroundColor:labels.map(l=>l==='อื่น ๆ'?'#9C9A8F':'#2F5A16'), borderRadius:4, maxBarThickness:22 }] },
+          data:{ labels, datasets:[{ data:values, backgroundColor:labels.map(l=>l==='อื่น ๆ'?'#7C9A96':'#39C7BF'), borderRadius:4, maxBarThickness:22 }] },
           options:{ indexAxis:'y',
-            plugins:{ legend:{display:false}, datalabels:{ display:true, anchor:'end', align:'end', color:'#242420', font:{size:11,weight:'700'}, formatter:v=>v>0?v:'' } },
+            plugins:{ legend:{display:false}, datalabels:{ display:true, anchor:'end', align:'end', color:'#091E1B', font:{size:11,weight:'700'}, formatter:v=>v>0?v:'' } },
             scales:{ x:{beginAtZero:true,ticks:{stepSize:1,font:{size:11}},grid:{display:false}}, y:{ticks:{font:{size:12}},grid:{display:false}} },
             layout:{padding:{right:24}},
             onClick:(evt, els)=>{ if(!els.length) return; const l=labels[els[0].index]; filterBySubject(l, l==='อื่น ๆ', topSet); },
@@ -657,7 +657,7 @@ const MODAL_BUILDERS = {
     // ones folded into "อื่น ๆ" for the chart — so nothing is hidden;
     // users can always see exactly which activities "อื่น ๆ" is made of.
     const topRows = top.map((e,i) => activityLegendRow(e[0], e[1], pctText(e[1]), colors[i], "filterByActivity('"+e[0]+"')"));
-    const otherRows = rest.map(e => activityLegendRow(e[0], e[1], pctText(e[1]), '#9C9A8F', "filterByActivity('"+e[0]+"')"));
+    const otherRows = rest.map(e => activityLegendRow(e[0], e[1], pctText(e[1]), '#7C9A96', "filterByActivity('"+e[0]+"')"));
     const legendHtml = '<div class="divide-y divide-bordc">' + topRows.join('') +
       (rest.length ? '<div class="px-1 pt-3 pb-1.5 text-[11px] font-bold uppercase tracking-wide text-inksoft">อื่น ๆ แยกตามกิจกรรมย่อย (' + rest.length + ' ประเภท)</div>' + otherRows.join('') : '') +
       '</div>';
@@ -743,7 +743,7 @@ const MODAL_BUILDERS = {
     const pctText = (v) => { if(!total || v<=0) return '0%'; const p = v/total*100; return (p<1 ? '<1' : Math.round(p)) + '%'; };
 
     const topRows = top.map((e,i) => activityLegendRow(e[0], e[1], pctText(e[1]), colors[i], "filterByProvince('"+e[0]+"')"));
-    const otherRows = rest.map(e => activityLegendRow(e[0], e[1], pctText(e[1]), '#9C9A8F', "filterByProvince('"+e[0]+"')"));
+    const otherRows = rest.map(e => activityLegendRow(e[0], e[1], pctText(e[1]), '#7C9A96', "filterByProvince('"+e[0]+"')"));
     const legendHtml = '<div class="divide-y divide-bordc">' + topRows.join('') +
       (rest.length ? '<div class="px-1 pt-3 pb-1.5 text-[11px] font-bold uppercase tracking-wide text-inksoft">อื่น ๆ แยกตามมณฑล (' + rest.length + ' มณฑล)</div>' + otherRows.join('') : '') +
       '</div>';
@@ -768,7 +768,7 @@ const MODAL_BUILDERS = {
           options:{ plugins:{ legend:{display:false},
               datalabels:{ display:true, color:(ctx)=>contrastTextColor(colors[ctx.dataIndex]), font:{size:10,weight:'700'},
                 formatter:(v)=>{ if(!total||v<=0) return ''; const pct=v/total*100; return pct<1?'<1%':Math.round(pct)+'%'; } },
-              centerText:{ display:true, text:fmt(uniqueProvinceCount), subtext:'มณฑลที่มีความร่วมมือ', color:'#242420' } },
+              centerText:{ display:true, text:fmt(uniqueProvinceCount), subtext:'มณฑลที่มีความร่วมมือ', color:'#091E1B' } },
             onClick:(evt, els)=>{ if(!els.length) return; const l=labels[els[0].index]; filterByProvince(l, l==='อื่น ๆ', topSet); },
             onHover:(evt, els)=>{ evt.native.target.style.cursor = els.length ? 'pointer' : 'default'; }
           },
@@ -822,7 +822,7 @@ const MODAL_BUILDERS = {
           options:{ plugins:{ legend:{display:false},
               datalabels:{ display:true, color:(ctx)=>contrastTextColor(colors[ctx.dataIndex]), font:{size:11,weight:'700'},
                 formatter:(v)=>{ if(!total||v<=0) return ''; const pct=v/total*100; return pct<1?'<1%':Math.round(pct)+'%'; } },
-              centerText:{ display:true, text:fmt(total), subtext:'วิทยาลัยทั่วประเทศ', color:'#242420' } },
+              centerText:{ display:true, text:fmt(total), subtext:'วิทยาลัยทั่วประเทศ', color:'#091E1B' } },
             onClick:(evt, els)=>{ if(!els.length) return; toggleCollegeList(COLLEGE_STATUS_KEY[labels[els[0].index]]); },
             onHover:(evt, els)=>{ evt.native.target.style.cursor = els.length ? 'pointer' : 'default'; }
           },
@@ -871,7 +871,7 @@ const MODAL_BUILDERS = {
           options:{ plugins:{ legend:{position:'bottom', labels:{boxWidth:10,font:{size:12}}},
               datalabels:{ display:true, color:(ctx)=>contrastTextColor(colors[ctx.dataIndex]), font:{size:10,weight:'700'},
                 formatter:(v)=>{ if(!total||v<=0) return ''; const pct=v/total*100; return pct<1?'<1%':Math.round(pct)+'%'; } },
-              centerText:{ display:true, text:fmt(total), subtext:'รวมทั้งหมด', color:'#242420' } },
+              centerText:{ display:true, text:fmt(total), subtext:'รวมทั้งหมด', color:'#091E1B' } },
             onClick:(evt, els)=>{ if(!els.length) return; const i=els[0].index; filterByLevel(cols[i], labels[i]); },
             onHover:(evt, els)=>{ evt.native.target.style.cursor = els.length ? 'pointer' : 'default'; }
           },
@@ -896,7 +896,7 @@ const MODAL_BUILDERS = {
           options:{ plugins:{ legend:{position:'bottom', labels:{boxWidth:10,font:{size:11}}},
               datalabels:{ display:true, color:(ctx)=>contrastTextColor(colors[ctx.dataIndex]), font:{size:10,weight:'700'},
                 formatter:(v)=>{ if(!total||v<=0) return ''; const pct=v/total*100; return pct<1?'<1%':Math.round(pct)+'%'; } },
-              centerText:{ display:true, text:fmt(total), subtext:'รวมทั้งหมด', color:'#242420' } },
+              centerText:{ display:true, text:fmt(total), subtext:'รวมทั้งหมด', color:'#091E1B' } },
             onClick:(evt, els)=>{ if(!els.length) return; const i=els[0].index; filterByLevel(cols[i], labels[i]); },
             onHover:(evt, els)=>{ evt.native.target.style.cursor = els.length ? 'pointer' : 'default'; }
           },
@@ -918,7 +918,7 @@ const MODAL_BUILDERS = {
         return new Chart(document.getElementById('modalChart'), {
           type:'bar',
           data:{ labels, datasets:[{ data:values, backgroundColor:colors, borderRadius:4, maxBarThickness:30 }] },
-          options:{ plugins:{ legend:{display:false}, datalabels:{ display:true, anchor:'end', align:'top', color:'#242420', font:{size:11,weight:'700'}, formatter:v=>v>0?v:'' } },
+          options:{ plugins:{ legend:{display:false}, datalabels:{ display:true, anchor:'end', align:'top', color:'#091E1B', font:{size:11,weight:'700'}, formatter:v=>v>0?v:'' } },
             scales:{ y:{beginAtZero:true, ticks:{font:{size:11}}}, x:{ticks:{font:{size:11}}, grid:{display:false}} },
             onClick:(evt, els)=>{ if(!els.length) return; const i=els[0].index; filterByLevel(cols[i], labels[i]); },
             onHover:(evt, els)=>{ evt.native.target.style.cursor = els.length ? 'pointer' : 'default'; }
@@ -943,7 +943,7 @@ const MODAL_BUILDERS = {
           options:{ plugins:{ legend:{position:'bottom', labels:{boxWidth:10,font:{size:12}}},
               datalabels:{ display:true, color:(ctx)=>contrastTextColor(colors[ctx.dataIndex]), font:{size:10,weight:'700'},
                 formatter:(v)=>{ if(!total||v<=0) return ''; const pct=v/total*100; return pct<1?'<1%':Math.round(pct)+'%'; } },
-              centerText:{ display:true, text:fmt(total), subtext:'รวมทั้งหมด', color:'#242420' } },
+              centerText:{ display:true, text:fmt(total), subtext:'รวมทั้งหมด', color:'#091E1B' } },
             onClick:(evt, els)=>{ if(!els.length) return; const i=els[0].index; filterByLevel(cols[i], labels[i]); },
             onHover:(evt, els)=>{ evt.native.target.style.cursor = els.length ? 'pointer' : 'default'; }
           },
@@ -968,7 +968,7 @@ const MODAL_BUILDERS = {
           options:{ plugins:{ legend:{position:'bottom', labels:{boxWidth:10,font:{size:12}}},
               datalabels:{ display:true, color:(ctx)=>contrastTextColor(colors[ctx.dataIndex]), font:{size:10,weight:'700'},
                 formatter:(v)=>{ if(!total||v<=0) return ''; const pct=v/total*100; return pct<1?'<1%':Math.round(pct)+'%'; } },
-              centerText:{ display:true, text:fmt(total), subtext:'รวมทั้งหมด', color:'#242420' } },
+              centerText:{ display:true, text:fmt(total), subtext:'รวมทั้งหมด', color:'#091E1B' } },
             onClick:(evt, els)=>{ if(!els.length) return; const i=els[0].index; filterByLevel(cols[i], labels[i]); },
             onHover:(evt, els)=>{ evt.native.target.style.cursor = els.length ? 'pointer' : 'default'; }
           },
@@ -986,7 +986,7 @@ function travelTypeBadge(type){
     'ระยะยาว': 'bg-emerald-50 text-emerald-800 border border-emerald-100',
     'อบรมระยะสั้น': 'bg-orange-50 text-orange-800 border border-orange-100',
   };
-  const cls = map[type] || 'bg-[#F1EEE2] text-inksoft border border-bordc';
+  const cls = map[type] || 'bg-[#E3F3F1] text-inksoft border border-bordc';
   return '<span class="inline-block text-[11px] font-bold px-2.5 py-1 rounded-full whitespace-nowrap ' + cls + '">' + esc(type) + '</span>';
 }
 
@@ -1122,7 +1122,7 @@ function renderTravelKpis(data){
     <div class="relative bg-white border border-bordc rounded-2xl px-5 py-4.5 pt-5 shadow-sm">
       <div class="absolute top-4 right-4"><span class="flex-none w-10 h-10 rounded-xl ${iconBg} ${iconInk} flex items-center justify-center"><i data-lucide="${icon}" class="w-5 h-5"></i></span></div>
       <p class="text-sm text-inksoft font-medium mb-2.5 pr-12">${label}</p>
-      <p class="text-3xl font-bold text-[#0F172A]">${fmt(value)}<span class="text-sm font-medium text-inksoft ml-1">${unit}</span></p>
+      <p class="text-3xl font-bold text-[#091E1B]">${fmt(value)}<span class="text-sm font-medium text-inksoft ml-1">${unit}</span></p>
     </div>`;
 
   document.getElementById('travelKpiRow').innerHTML =
@@ -1154,7 +1154,7 @@ function renderTravelKpis(data){
       plugins:{
         legend:{display:false},
         datalabels:{display:false},
-        centerText:{ display:true, text:fmt(totalStudents), subtext:'คนเดินทาง', color:'#242420' }
+        centerText:{ display:true, text:fmt(totalStudents), subtext:'คนเดินทาง', color:'#091E1B' }
       },
       onClick:(evt, els)=>{ if(!els.length) return; filterTravelByType(typeLabels[els[0].index]); },
       onHover:(evt, els)=>{ evt.native.target.style.cursor = els.length ? 'pointer' : 'default'; }
@@ -1177,17 +1177,17 @@ function renderTravelTable(groups, forceExpandKeys){
     const key = g.thaiCollege;
     const isOpen = openTravelGroupKey === key || forceExpandKeys.has(key);
     const childRows = g.items.map(item => `
-      <tr class="travel-child ${isOpen ? '' : 'hidden'} bg-[#F4F4EC] border-t border-bordc" data-group="${gi}">
+      <tr class="travel-child ${isOpen ? '' : 'hidden'} bg-[#EAF7F5] border-t border-bordc" data-group="${gi}">
         <td class="p-2.5 align-top text-center text-inksoft">↳</td>
         <td class="p-2.5 pl-7 align-top break-words whitespace-normal text-sm text-inksoft">${esc(item.cnCollege) || '-'}</td>
-        <td class="p-2.5 align-top text-center whitespace-nowrap font-light text-[14px] text-[#0F172A]">${fmt(item.studentCount)}</td>
+        <td class="p-2.5 align-top text-center whitespace-nowrap font-light text-[14px] text-[#091E1B]">${fmt(item.studentCount)}</td>
         <td class="p-2.5 align-top text-center">${travelTypeBadge(item.travelType)}</td>
       </tr>`).join('');
     return `
       <tr class="travel-parent cursor-pointer hover:bg-black/[0.02] border-t border-bordc" data-group="${gi}" role="button" tabindex="0" aria-expanded="${isOpen}" onclick="toggleTravelGroup('${gi}')" onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();toggleTravelGroup('${gi}');}">
         <td class="p-3 align-top text-center text-sm font-bold text-inksoft">${gi + 1}</td>
         <td class="p-4 align-top break-words whitespace-normal font-semibold text-[14px]">${esc(g.thaiCollege)}</td>
-        <td class="p-3 align-top text-center whitespace-nowrap font-bold text-[15px] text-[#0F172A]">${fmt(g.totalStudents)}</td>
+        <td class="p-3 align-top text-center whitespace-nowrap font-bold text-[15px] text-[#091E1B]">${fmt(g.totalStudents)}</td>
         <td class="p-3 align-top text-center">
           <button class="travel-toggle-btn inline-flex items-center gap-1.5 text-[13px] font-semibold text-accent hover:underline transition" data-group="${gi}">
             <span class="chev">${isOpen ? '▲' : '▼'}</span> ${isOpen ? 'ซ่อนข้อมูล' : 'ดูข้อมูล (' + g.items.length + ' โครงการ)'}
@@ -1208,14 +1208,14 @@ function renderTravelMobileCards(groups, forceExpandKeys){
     const key = g.thaiCollege;
     const isOpen = openTravelGroupKey === key || forceExpandKeys.has(key);
     const childItems = g.items.map(item => `
-      <div class="flex flex-col gap-1.5 py-2.5 px-3 border-t border-bordc bg-[#F4F4EC]">
+      <div class="flex flex-col gap-1.5 py-2.5 px-3 border-t border-bordc bg-[#EAF7F5]">
         <div class="flex items-start gap-1.5">
           <span class="text-inksoft flex-none">↳</span>
           <p class="text-sm text-inksoft break-words whitespace-normal flex-1">${esc(item.cnCollege) || '-'}</p>
         </div>
         <div class="flex items-center justify-between pl-4">
           ${travelTypeBadge(item.travelType)}
-          <span class="font-light text-[14px] text-[#0F172A]">${fmt(item.studentCount)} คน</span>
+          <span class="font-light text-[14px] text-[#091E1B]">${fmt(item.studentCount)} คน</span>
         </div>
       </div>`).join('');
     return `
@@ -1223,7 +1223,7 @@ function renderTravelMobileCards(groups, forceExpandKeys){
       <div class="p-4 flex flex-col gap-2.5 cursor-pointer" role="button" tabindex="0" aria-expanded="${isOpen}" onclick="toggleTravelGroup('${gi}')" onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();toggleTravelGroup('${gi}');}">
         <div class="flex justify-between items-start gap-2">
           <span class="font-bold text-accent text-sm whitespace-nowrap">#${gi + 1}</span>
-          <span class="font-bold text-[15px] text-[#0F172A] whitespace-nowrap">${fmt(g.totalStudents)} คน</span>
+          <span class="font-bold text-[15px] text-[#091E1B] whitespace-nowrap">${fmt(g.totalStudents)} คน</span>
         </div>
         <p class="font-semibold text-[15px] leading-snug break-words whitespace-normal">${esc(g.thaiCollege)}</p>
         <button class="travel-toggle-btn self-start inline-flex items-center gap-1.5 text-[12px] font-semibold text-accent hover:underline" data-group="${gi}">
@@ -1357,19 +1357,19 @@ function renderTable(rows){
     const meta = statusMeta(r[COL.status]);
     const hasPdf = !!r[COL.pdf];
     return `
-    <tr class="row cursor-pointer hover:bg-[#FAFAF3] border-t border-bordc" data-idx="${i}" role="button" tabindex="0" aria-expanded="false">
+    <tr class="row cursor-pointer hover:bg-[#F3FBFA] border-t border-bordc" data-idx="${i}" role="button" tabindex="0" aria-expanded="false">
       <td class="p-3 whitespace-nowrap"><span class="chevron inline-block text-inksoft transition-transform">›</span></td>
       <td class="p-3 whitespace-nowrap"><span class="font-bold text-accent">${code}</span></td>
       <td class="p-3 whitespace-nowrap">${hasPdf
         ? '<a class="text-accent" href="'+esc(r[COL.pdf])+'" target="_blank" rel="noopener" onclick="event.stopPropagation()" title="ดาวน์โหลดเอกสาร">'+PDF_ICON+'</a>'
-        : '<span class="text-[#C9C6B8]" title="ไม่มีไฟล์แนบ">'+PDF_ICON+'</span>'}</td>
+        : '<span class="text-[#A9C9C5]" title="ไม่มีไฟล์แนบ">'+PDF_ICON+'</span>'}</td>
       <td class="p-4 align-top break-words whitespace-normal"><p class="font-semibold text-[15px] leading-snug mb-0.5 break-words">${esc(r[COL.name])}</p><p class="text-xs text-inksoft break-words">${esc(r[COL.docType])||''}</p></td>
       <td class="p-4 align-top break-words whitespace-normal">${orgBadge(r[COL.partyAth], r[COL.typeA]) + orgBadge(r[COL.partyBth], r[COL.typeB])}</td>
       <td class="p-4 align-top break-words whitespace-normal">${orgBadge(r[COL.partyAch], r[COL.typeAch]) + orgBadge(r[COL.partyBch], r[COL.typeBch])}</td>
       <td class="p-3 align-top text-sm break-words whitespace-normal">${provinceCell(r)}</td>
       <td class="p-3 align-top whitespace-nowrap"><span class="inline-flex items-center gap-1.5 text-[13px] font-bold px-3.5 py-1.5 rounded-full ${meta.cls}"><span class="w-2 h-2 rounded-full flex-none ${meta.dot}"></span>${meta.label}</span></td>
     </tr>
-    <tr class="detail hidden" data-idx="${i}"><td colspan="8" class="p-0 bg-[#FAFAF3]">${detailHtml(r)}</td></tr>
+    <tr class="detail hidden" data-idx="${i}"><td colspan="8" class="p-0 bg-[#F3FBFA]">${detailHtml(r)}</td></tr>
   `;}).join('');
 
   tbody.querySelectorAll('tr.row').forEach(tr => {
@@ -1421,7 +1421,7 @@ function renderMobileCards(rows){
           <span class="font-bold text-accent text-sm whitespace-nowrap">${code}</span>
           ${hasPdf
             ? '<a class="text-accent flex-none" href="'+esc(r[COL.pdf])+'" target="_blank" rel="noopener" onclick="event.stopPropagation()" title="ดาวน์โหลดเอกสาร">'+PDF_ICON+'</a>'
-            : '<span class="text-[#C9C6B8] flex-none" title="ไม่มีไฟล์แนบ">'+PDF_ICON+'</span>'}
+            : '<span class="text-[#A9C9C5] flex-none" title="ไม่มีไฟล์แนบ">'+PDF_ICON+'</span>'}
           <span class="text-xs text-inksoft whitespace-nowrap truncate">${esc(r[COL.docType])||''}</span>
         </div>
         <span class="flex-none inline-flex items-center gap-1.5 text-[12px] font-bold px-2.5 py-1 rounded-full whitespace-nowrap ${meta.cls}"><span class="w-1.5 h-1.5 rounded-full flex-none ${meta.dot}"></span>${meta.label}</span>
@@ -1440,7 +1440,7 @@ function renderMobileCards(rows){
         <span class="chevron-m inline-block transition-transform">›</span>
       </div>
     </div>
-    <div class="detail-m hidden mb-3 -mt-2 rounded-xl overflow-hidden bg-[#FAFAF3] border border-bordc border-t-0" data-idx="${i}">${detailHtml(r)}</div>
+    <div class="detail-m hidden mb-3 -mt-2 rounded-xl overflow-hidden bg-[#F3FBFA] border border-bordc border-t-0" data-idx="${i}">${detailHtml(r)}</div>
   `;}).join('');
 
   wrap.querySelectorAll('.mrow').forEach(card => {
