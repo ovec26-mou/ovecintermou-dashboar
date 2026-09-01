@@ -230,6 +230,15 @@ const CSV_URL_TRAVEL = "https://docs.google.com/spreadsheets/d/e/2PACX-1vR1QHqqh
 let chinaTravelData = []; // เติมจริงหลัง fetch CSV เสร็จ (ดู Papa.parse ท้ายไฟล์)
 let CHINA_TRAVEL_TOTAL_STUDENTS = 0;
 
+/** ----- ชีต "433 วิทยาลัย" (ความครอบคลุมทั่วประเทศ) -----
+    คอลัมน์จริง: ที่, สถานศึกษา, จังหวัด, สถานะ (มีความร่วมมือ / ไม่มีความร่วมมือ / ยังไม่มีข้อมูล)
+    สถานะคำนวณด้วยสูตรในชีตเอง (เทียบชื่อกับสรุปรวม + ชีตยืนยันไม่มีความร่วมมือ) ไม่ใช่ derive จากที่นี่ */
+const CSV_URL_COLLEGES = "https://docs.google.com/spreadsheets/d/e/2PACX-1vR1QHqqhuGhgzsC1IkHke8mQtLuKjhHhhxWGZnHg-xIvYN0memFprQn8sSm7qYQTWNuPiR-vlUzgcbH/pub?gid=1252863755&single=true&output=csv";
+let collegeData = []; // [{no, name, province, status}]
+const COLLEGE_STATUS_ORDER = ['มีความร่วมมือ', 'ไม่มีความร่วมมือ', 'ยังไม่มีข้อมูล'];
+const COLLEGE_STATUS_COLOR = { 'มีความร่วมมือ':'#2F7A3D', 'ไม่มีความร่วมมือ':'#9C9A8F', 'ยังไม่มีข้อมูล':'#D97706' };
+const COLLEGE_STATUS_KEY = { 'มีความร่วมมือ':'has', 'ไม่มีความร่วมมือ':'none', 'ยังไม่มีข้อมูล':'unknown' };
+
 /** ----- helpers ----- */
 
 function num(v){ const n = parseFloat(v); return isNaN(n) ? 0 : n; }
@@ -427,6 +436,10 @@ window.filterByStatus = function(label){
 window.filterByMouLevel = function(label){
   applyFilter('ระดับผู้ลงนาม: ' + label, r => r[COL.level] === label);
 };
+window.toggleCollegeList = function(statusKey){
+  const el = document.getElementById('collegeList-' + statusKey);
+  if(el) el.classList.toggle('hidden');
+};
 window.filterByProvince = function(label, others, topSet){
   if(others){
     applyFilter('มณฑล: อื่น ๆ', r => getProvinces(r).some(p => !topSet.has(p)));
@@ -500,6 +513,7 @@ const BANNERS = [
   { key:'trend',    icon:'trending-up',     title:'แนวโน้มการลงนามรายปี',                     hint:'2019 – 2026',              group:'overview' },
   { key:'signLevel',icon:'badge-check',     title:'ระดับผู้ลงนามฝ่าย สอศ.',                    hint:'จำแนกตามระดับผู้ลงนาม',      group:'overview' },
   { key:'province', icon:'map',             title:'มณฑลที่มีความร่วมมือ',                      hint:'สัดส่วนความร่วมมือตามมณฑล',   group:'overview' },
+  { key:'collegeCoverage', icon:'building-2', title:'ความครอบคลุมวิทยาลัยไทย',                 hint:'จาก 433 แห่งทั่วประเทศ',      group:'overview' },
   { key:'status',   icon:'shield-check',    title:'สถานะความร่วมมือ',                          hint:'ปกติ / ใกล้หมดอายุ / หมดอายุ', group:'overview' },
   { key:'subject',  icon:'graduation-cap',  title:'Top สาขาวิชาที่มีความร่วมมือ',              hint:'5 อันดับแรก + อื่น ๆ',       group:'overview' },
   { key:'students', icon:'users',           title:'ผู้เรียนภายใต้ความร่วมมือ',                  hint:'ปวช. / ปวส. / ป.ตรี',        group:'students' },
@@ -756,6 +770,60 @@ const MODAL_BUILDERS = {
                 formatter:(v)=>{ if(!total||v<=0) return ''; const pct=v/total*100; return pct<1?'<1%':Math.round(pct)+'%'; } },
               centerText:{ display:true, text:fmt(uniqueProvinceCount), subtext:'มณฑลที่มีความร่วมมือ', color:'#0F172A' } },
             onClick:(evt, els)=>{ if(!els.length) return; const l=labels[els[0].index]; filterByProvince(l, l==='อื่น ๆ', topSet); },
+            onHover:(evt, els)=>{ evt.native.target.style.cursor = els.length ? 'pointer' : 'default'; }
+          },
+          plugins:[centerTextPlugin]
+        });
+      }
+    };
+  },
+  collegeCoverage(){
+    const total = collegeData.length;
+    const byStatus = {};
+    COLLEGE_STATUS_ORDER.forEach(s => byStatus[s] = []);
+    collegeData.forEach(c => { (byStatus[c.status] || (byStatus[c.status] = [])).push(c); });
+
+    const labels = COLLEGE_STATUS_ORDER;
+    const values = labels.map(s => (byStatus[s] || []).length);
+    const colors = labels.map(s => COLLEGE_STATUS_COLOR[s]);
+    const pctText = (v) => { if(!total || v<=0) return '0%'; const p = v/total*100; return (p<1 ? '<1' : Math.round(p)) + '%'; };
+
+    const legendRows = labels.map((s,i) => activityLegendRow(s, values[i], pctText(values[i]), colors[i], "toggleCollegeList('"+COLLEGE_STATUS_KEY[s]+"')"));
+
+    const listSection = (status) => {
+      const key = COLLEGE_STATUS_KEY[status];
+      const names = (byStatus[status] || []).map(c => c.name).sort((a,b)=>a.localeCompare(b,'th'));
+      return `
+        <div id="collegeList-${key}" class="hidden mt-2 pt-2 border-t border-bordc">
+          <p class="text-[11px] font-bold uppercase tracking-wide text-inksoft mb-1.5">${status} (${names.length} แห่ง)</p>
+          <div class="max-h-[30vh] overflow-y-auto text-sm leading-relaxed">
+            ${names.map(n => '<div class="py-0.5">' + esc(n) + '</div>').join('') || '<p class="text-inksoft">-</p>'}
+          </div>
+        </div>`;
+    };
+
+    return {
+      title: 'ความครอบคลุมวิทยาลัยไทย',
+      subtitle: 'จากวิทยาลัยอาชีวศึกษาทั่วประเทศ ' + fmt(total) + ' แห่ง — คลิกที่สัดส่วนเพื่อดูรายชื่อ',
+      bodyHtml: `
+        <div class="flex flex-col max-h-[70vh]">
+          <div class="flex-none">
+            <canvas id="modalChart"></canvas>
+          </div>
+          <div class="flex-1 min-h-0 overflow-y-auto mt-2 border-t border-bordc pr-1">
+            <div class="divide-y divide-bordc">${legendRows.join('')}</div>
+            ${labels.map(listSection).join('')}
+          </div>
+        </div>`,
+      render(){
+        return new Chart(document.getElementById('modalChart'), {
+          type:'doughnut',
+          data:{ labels, datasets:[{ data:values, backgroundColor:colors }] },
+          options:{ plugins:{ legend:{display:false},
+              datalabels:{ display:true, color:(ctx)=>contrastTextColor(colors[ctx.dataIndex]), font:{size:11,weight:'700'},
+                formatter:(v)=>{ if(!total||v<=0) return ''; const pct=v/total*100; return pct<1?'<1%':Math.round(pct)+'%'; } },
+              centerText:{ display:true, text:fmt(total), subtext:'วิทยาลัยทั่วประเทศ', color:'#0F172A' } },
+            onClick:(evt, els)=>{ if(!els.length) return; toggleCollegeList(COLLEGE_STATUS_KEY[labels[els[0].index]]); },
             onHover:(evt, els)=>{ evt.native.target.style.cursor = els.length ? 'pointer' : 'default'; }
           },
           plugins:[centerTextPlugin]
@@ -1470,6 +1538,25 @@ Papa.parse(CSV_URL_TRAVEL, {
     console.error('โหลดข้อมูลการเดินทางจีนไม่สำเร็จ:', err);
     document.getElementById('travelTbody').innerHTML = '<tr><td colspan="4" class="text-center text-inksoft p-10">โหลดข้อมูลไม่สำเร็จ: ' + esc(err) + '</td></tr>';
     document.getElementById('travelMobileCards').innerHTML = '<p class="text-center text-inksoft p-8 text-sm">โหลดข้อมูลไม่สำเร็จ: ' + esc(err) + '</p>';
+  }
+});
+
+// ชีต "433 วิทยาลัย" — คอลัมน์จริง: ที่, สถานศึกษา, จังหวัด, สถานะ
+Papa.parse(CSV_URL_COLLEGES, {
+  download: true,
+  header: false,
+  skipEmptyLines: true,
+  complete: function(results){
+    const rows = results.data.slice(1);
+    collegeData = rows.map(r => ({
+      no: r[0] || '',
+      name: (r[1] || '').trim(),
+      province: (r[2] || '').trim(),
+      status: (r[3] || '').trim() || 'ยังไม่มีข้อมูล'
+    })).filter(c => c.name);
+  },
+  error: function(err){
+    console.error('โหลดข้อมูลรายชื่อ 433 วิทยาลัยไม่สำเร็จ:', err);
   }
 });
 
