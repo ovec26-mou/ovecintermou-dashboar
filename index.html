@@ -1591,8 +1591,9 @@ window.exportAllSummaryToCSV = exportAllSummaryToCSV;
 
 /** ----- printable executive summary card (PNG / PDF) ----- */
 // ใช้ตัวเลขและ builder ชุดเดียวกับ exportAllSummaryToCSV เพื่อไม่ให้ตัวเลขเพี้ยนจากที่แสดงบนเว็บ
-// แต่ render เป็น HTML สวย ๆ แทน CSV แล้วค่อย capture ด้วย html2canvas
-function buildPrintSummaryHTML(){
+// buildPrintBlocks() คืนค่าเป็น "บล็อก" HTML แยกทีละชิ้น (หัวรายงาน / แถว KPI / หัวข้อกลุ่ม / การ์ดแต่ละใบ)
+// เพื่อให้ตอนแบ่งหน้า PDF จับภาพและวางทีละบล็อกได้ โดยไม่ตัดกลางการ์ดใบใดใบหนึ่ง
+function buildPrintBlocks(){
   const totalMou = ROWS.length;
   const thaiOrgType = {}, cnOrgType = {};
   ROWS.forEach(r=>{
@@ -1605,102 +1606,122 @@ function buildPrintSummaryHTML(){
   const cnTotal = Object.keys(cnOrgType).length;
   const expiringCount = ROWS.filter(r => r[COL.status] === 'ใกล้หมดอายุ').length;
 
+  const today = new Date().toLocaleDateString('th-TH', { year:'numeric', month:'long', day:'numeric' });
+  const headerBlock = `
+    <div style="border-bottom:2px solid #2F5A16; padding-bottom:16px;">
+      <p style="font-size:13px; color:#54534C; margin:0 0 4px;">สำนักงานคณะกรรมการการอาชีวศึกษา</p>
+      <p style="font-size:20px; font-weight:700; margin:0 0 4px; color:#242420;">รายงานสรุปความร่วมมือ สอศ. – สาธารณรัฐประชาชนจีน</p>
+      <p style="font-size:12px; color:#9C9A8F; margin:0;">ข้อมูล ณ วันที่ ${today}</p>
+    </div>`;
+
   const kpiCard = (label, value, accentClass) => `
     <div style="flex:1; background:#fff; border:1px solid #E2DDCE; border-radius:16px; padding:18px 20px;">
       <p style="font-size:13px; color:#54534C; margin:0 0 8px;">${esc(label)}</p>
       <p style="font-size:28px; font-weight:700; margin:0; color:${accentClass};">${fmt(value)}</p>
     </div>`;
-
-  const kpiRow = `
-    <div style="display:flex; gap:14px; margin-bottom:28px;">
+  const kpiBlock = `
+    <div style="display:flex; gap:14px;">
       ${kpiCard('ความร่วมมือทั้งหมด', totalMou, '#242420')}
       ${kpiCard('สถานศึกษาไทย', thaiTotal, '#242420')}
       ${kpiCard('หน่วยงานต่างประเทศ', cnTotal, '#242420')}
       ${kpiCard('ใกล้หมดอายุ', expiringCount, expiringCount>0 ? '#7A4E0A' : '#242420')}
     </div>`;
 
-  // การ์ดรายละเอียดต่อ banner: หัวข้อสีตาม group เดิม + ตารางรายการ/ค่า
-  const sectionHtml = Object.keys(BANNER_GROUPS).map(groupKey => {
+  const blocks = [headerBlock, kpiBlock];
+
+  Object.keys(BANNER_GROUPS).forEach(groupKey => {
     const g = BANNER_GROUPS[groupKey];
     const groupAccent = { 'bg-blue-50':'#1E40AF', 'bg-teal-50':'#0F766E', 'bg-orange-50':'#C2410C' }[g.bg] || '#242420';
-    const items = BANNERS.filter(b => b.group === groupKey).map(b => {
+    blocks.push(`<p style="font-size:12px; font-weight:700; text-transform:uppercase; letter-spacing:.04em; color:#54534C; margin:0;">${esc(g.label)}</p>`);
+    BANNERS.filter(b => b.group === groupKey).forEach(b => {
       const cfg = MODAL_BUILDERS[b.key](ROWS);
-      if(!cfg.labels || !cfg.values) return '';
+      if(!cfg.labels || !cfg.values) return;
       const rows = cfg.labels.map((l,i) => `
         <div style="display:flex; justify-content:space-between; padding:6px 0; border-bottom:1px solid #EFEBDE; font-size:13px;">
           <span style="color:#54534C;">${esc(l)}</span>
           <span style="font-weight:700; color:#0F172A;">${fmt(cfg.values[i])}</span>
         </div>`).join('');
-      return `
-        <div style="background:#fff; border:1px solid #E2DDCE; border-radius:14px; padding:16px 18px; margin-bottom:12px;">
+      blocks.push(`
+        <div style="background:#fff; border:1px solid #E2DDCE; border-radius:14px; padding:16px 18px;">
           <p style="font-size:14px; font-weight:700; margin:0 0 8px; color:${groupAccent};">${esc(b.title)}</p>
           ${rows}
-        </div>`;
-    }).join('');
-    return `
-      <p style="font-size:12px; font-weight:700; text-transform:uppercase; letter-spacing:.04em; color:#54534C; margin:22px 0 10px;">${esc(g.label)}</p>
-      ${items}`;
-  }).join('');
-
-  const today = new Date().toLocaleDateString('th-TH', { year:'numeric', month:'long', day:'numeric' });
-  return `
-    <div style="border-bottom:2px solid #2F5A16; padding-bottom:16px; margin-bottom:24px;">
-      <p style="font-size:13px; color:#54534C; margin:0 0 4px;">สำนักงานคณะกรรมการการอาชีวศึกษา</p>
-      <p style="font-size:20px; font-weight:700; margin:0 0 4px; color:#242420;">รายงานสรุปความร่วมมือ สอศ. – สาธารณรัฐประชาชนจีน</p>
-      <p style="font-size:12px; color:#9C9A8F; margin:0;">ข้อมูล ณ วันที่ ${today}</p>
-    </div>
-    ${kpiRow}
-    ${sectionHtml}
-  `;
+        </div>`);
+    });
+  });
+  return blocks;
 }
 
-function exportSummaryAsImage(kind){
+// รวมทุกบล็อกเป็น HTML ชิ้นเดียว (ใช้กับ PNG ที่ไม่ต้องสนใจเรื่องแบ่งหน้า)
+function buildPrintSummaryHTML(){
+  return buildPrintBlocks().map(b => `<div style="margin-bottom:14px;">${b}</div>`).join('');
+}
+
+function nextFrame(){ return new Promise(resolve => requestAnimationFrame(resolve)); }
+
+async function exportSummaryAsImage(kind){
   // ป้องกันกรณีกดปุ่มก่อนข้อมูลจาก Google Sheets โหลดเสร็จ (ROWS จะยังว่างอยู่ ตัวเลขจะออกมาเป็น 0 ทั้งหมด)
   if(!ROWS || ROWS.length === 0){
     alert('ข้อมูลยังโหลดไม่เสร็จ กรุณารอสักครู่ (สังเกตว่าการ์ด KPI ด้านบนแสดงตัวเลขแล้ว) แล้วลองกดใหม่อีกครั้ง');
     return;
   }
   const card = document.getElementById('printSummaryCard');
-  card.innerHTML = buildPrintSummaryHTML();
+  const dateStr = new Date().toISOString().slice(0,10);
 
-  // รอ 1 เฟรมให้ browser วาด layout ให้เสร็จก่อน capture (สำคัญมากสำหรับ html2canvas)
-  requestAnimationFrame(() => {
-    html2canvas(card, { backgroundColor: '#F5F1E6', scale: 2 }).then(canvas => {
-      const dateStr = new Date().toISOString().slice(0,10);
-      if(kind === 'pdf'){
-        const { jsPDF } = window.jspdf;
-        const pdf = new jsPDF('p', 'pt', 'a4');
-        const margin = 20; // ใช้เป็นขอบซ้าย-ขวาเท่านั้น ไม่ใช้เป็นขอบบน-ล่าง เพื่อไม่ให้คำนวณจุดตัดหน้าผิดพลาด
-        const pageWidth = pdf.internal.pageSize.getWidth();
-        const pageHeight = pdf.internal.pageSize.getHeight();
-        const imgWidth = pageWidth - margin * 2;
-        const imgHeight = canvas.height * (imgWidth / canvas.width); // ความสูงทั้งหมดของเนื้อหา ถ้าวาดที่ความกว้างนี้
-        const imgData = canvas.toDataURL('image/png');
+  if(kind === 'pdf'){
+    // capture ทีละบล็อก (การ์ดต่อการ์ด) แล้วค่อยวางต่อกันใน PDF
+    // ถ้าการ์ดใบไหนไม่พอที่เหลือในหน้าปัจจุบัน ให้ขึ้นหน้าใหม่ทั้งใบ ไม่ตัดกลางการ์ด
+    const blocks = buildPrintBlocks();
+    const { jsPDF } = window.jspdf;
+    const pdf = new jsPDF('p', 'pt', 'a4');
+    const margin = 24;
+    const pageWidth = pdf.internal.pageSize.getWidth();
+    const pageHeight = pdf.internal.pageSize.getHeight();
+    const contentWidth = pageWidth - margin * 2;
+    const maxY = pageHeight - margin;
+    let y = margin;
 
-        // วางภาพเดิมซ้ำทุกหน้า แต่เลื่อนขึ้นทีละ 1 ความสูงหน้ากระดาษ (pageHeight)
-        // เพราะ jsPDF ตัดภาพตามขอบกระดาษจริงเท่านั้น การเผื่อขอบบน-ล่างจะทำให้ตัวเลขที่ "เลื่อนไปแล้ว" กับ "ที่ตัดจริง" ไม่ตรงกัน จนเกิดเนื้อหาซ้ำตรงรอยต่อหน้า
-        let heightLeft = imgHeight;
-        let position = 0;
-        pdf.addImage(imgData, 'PNG', margin, position, imgWidth, imgHeight);
-        heightLeft -= pageHeight;
+    for(const blockHtml of blocks){
+      card.innerHTML = blockHtml;
+      await nextFrame();
+      const canvas = await html2canvas(card, { backgroundColor: null, scale: 2 });
+      const imgHeight = canvas.height * (contentWidth / canvas.width);
+      const imgData = canvas.toDataURL('image/png');
 
+      if(imgHeight > maxY - margin){
+        // กรณีหายาก: บล็อกเดียวสูงกว่า 1 หน้าเต็ม ๆ (ปกติไม่ควรเกิด) — ตัดแบ่งเฉพาะบล็อกนี้เป็นหลายหน้า
+        if(y > margin) { pdf.addPage(); y = margin; }
+        let heightLeft = imgHeight, pos = 0;
+        pdf.addImage(imgData, 'PNG', margin, y, contentWidth, imgHeight);
+        heightLeft -= (pageHeight - margin);
         while(heightLeft > 0){
-          position = heightLeft - imgHeight; // ค่าติดลบ เพื่อเลื่อนภาพขึ้นให้ส่วนที่ยังไม่เห็นตกลงมาในหน้าใหม่
+          pos = heightLeft - imgHeight;
           pdf.addPage();
-          pdf.addImage(imgData, 'PNG', margin, position, imgWidth, imgHeight);
+          pdf.addImage(imgData, 'PNG', margin, pos, contentWidth, imgHeight);
           heightLeft -= pageHeight;
         }
-        pdf.save('รายงานสรุป-ความร่วมมือจีน-สอศ_' + dateStr + '.pdf');
-      } else {
-        const a = document.createElement('a');
-        a.href = canvas.toDataURL('image/png');
-        a.download = 'รายงานสรุป-ความร่วมมือจีน-สอศ_' + dateStr + '.png';
-        document.body.appendChild(a);
-        a.click();
-        document.body.removeChild(a);
+        y = margin; // บล็อกถัดไปเริ่มหน้าใหม่เสมอหลังกรณีนี้
+        continue;
       }
-    });
-  });
+
+      if(y + imgHeight > maxY){
+        pdf.addPage();
+        y = margin;
+      }
+      pdf.addImage(imgData, 'PNG', margin, y, contentWidth, imgHeight);
+      y += imgHeight + 10; // เว้นช่องว่างเล็ก ๆ ระหว่างการ์ด
+    }
+    pdf.save('รายงานสรุป-ความร่วมมือจีน-สอศ_' + dateStr + '.pdf');
+  } else {
+    card.innerHTML = buildPrintSummaryHTML();
+    await nextFrame();
+    const canvas = await html2canvas(card, { backgroundColor: '#F5F1E6', scale: 2 });
+    const a = document.createElement('a');
+    a.href = canvas.toDataURL('image/png');
+    a.download = 'รายงานสรุป-ความร่วมมือจีน-สอศ_' + dateStr + '.png';
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+  }
 }
 window.exportSummaryAsImage = exportSummaryAsImage;
 
