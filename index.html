@@ -1670,27 +1670,25 @@ function exportSummaryAsImage(kind){
       if(kind === 'pdf'){
         const { jsPDF } = window.jspdf;
         const pdf = new jsPDF('p', 'pt', 'a4');
-        const margin = 20;
+        const margin = 20; // ใช้เป็นขอบซ้าย-ขวาเท่านั้น ไม่ใช้เป็นขอบบน-ล่าง เพื่อไม่ให้คำนวณจุดตัดหน้าผิดพลาด
         const pageWidth = pdf.internal.pageSize.getWidth();
         const pageHeight = pdf.internal.pageSize.getHeight();
         const imgWidth = pageWidth - margin * 2;
         const imgHeight = canvas.height * (imgWidth / canvas.width); // ความสูงทั้งหมดของเนื้อหา ถ้าวาดที่ความกว้างนี้
-        const usableHeight = pageHeight - margin * 2; // พื้นที่ที่ใช้แสดงภาพได้ต่อ 1 หน้า
         const imgData = canvas.toDataURL('image/png');
 
-        // เนื้อหายาวกว่า 1 หน้า A4 มาก จึงวางภาพเดิมซ้ำในแต่ละหน้า
-        // แล้วเลื่อนตำแหน่งขึ้นทีละหน้า เพื่อให้ส่วนที่ยังไม่เห็นเลื่อนเข้ามาในพื้นที่หน้าถัดไป
-        // (ส่วนที่เกินขอบหน้าแต่ละแผ่นจะถูก jsPDF ตัดออกให้เองโดยอัตโนมัติ)
+        // วางภาพเดิมซ้ำทุกหน้า แต่เลื่อนขึ้นทีละ 1 ความสูงหน้ากระดาษ (pageHeight)
+        // เพราะ jsPDF ตัดภาพตามขอบกระดาษจริงเท่านั้น การเผื่อขอบบน-ล่างจะทำให้ตัวเลขที่ "เลื่อนไปแล้ว" กับ "ที่ตัดจริง" ไม่ตรงกัน จนเกิดเนื้อหาซ้ำตรงรอยต่อหน้า
         let heightLeft = imgHeight;
-        let position = margin;
+        let position = 0;
         pdf.addImage(imgData, 'PNG', margin, position, imgWidth, imgHeight);
-        heightLeft -= usableHeight;
+        heightLeft -= pageHeight;
 
         while(heightLeft > 0){
+          position = heightLeft - imgHeight; // ค่าติดลบ เพื่อเลื่อนภาพขึ้นให้ส่วนที่ยังไม่เห็นตกลงมาในหน้าใหม่
           pdf.addPage();
-          position = margin - (imgHeight - heightLeft);
           pdf.addImage(imgData, 'PNG', margin, position, imgWidth, imgHeight);
-          heightLeft -= usableHeight;
+          heightLeft -= pageHeight;
         }
         pdf.save('รายงานสรุป-ความร่วมมือจีน-สอศ_' + dateStr + '.pdf');
       } else {
