@@ -39,6 +39,8 @@
 <script src="https://cdnjs.cloudflare.com/ajax/libs/PapaParse/5.4.1/papaparse.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.0/chart.umd.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/chartjs-plugin-datalabels/2.2.0/chartjs-plugin-datalabels.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
 
 <style>
   /* Small bits Tailwind utility classes can't express cleanly */
@@ -81,9 +83,22 @@
   <div id="tabOverviewContent">
     <div class="flex items-center justify-between gap-3 mb-2.5 flex-wrap">
       <p class="text-xs font-bold uppercase tracking-wider text-inksoft">ข้อมูลเชิงลึก <span class="font-normal normal-case">— แตะเพื่อดูรายละเอียดและกรองตาราง</span></p>
-      <button onclick="exportAllSummaryToCSV()" class="flex-none inline-flex items-center gap-2 px-4 py-2 rounded-full border border-bordc bg-white text-xs font-semibold text-ink hover:bg-[#F1EEE2] transition">
-        <i data-lucide="download" class="w-3.5 h-3.5"></i> Export การ์ดสรุปทั้งหมด (CSV)
-      </button>
+      <div class="flex-none flex gap-2">
+        <button onclick="exportAllSummaryToCSV()" class="inline-flex items-center gap-2 px-4 py-2 rounded-full border border-bordc bg-white text-xs font-semibold text-ink hover:bg-[#F1EEE2] transition">
+          <i data-lucide="download" class="w-3.5 h-3.5"></i> Export การ์ดสรุปทั้งหมด (CSV)
+        </button>
+        <button onclick="exportSummaryAsImage('png')" class="inline-flex items-center gap-2 px-4 py-2 rounded-full border border-bordc bg-white text-xs font-semibold text-ink hover:bg-[#F1EEE2] transition">
+          <i data-lucide="image" class="w-3.5 h-3.5"></i> ดาวน์โหลดภาพ (PNG)
+        </button>
+        <button onclick="exportSummaryAsImage('pdf')" class="inline-flex items-center gap-2 px-4 py-2 rounded-full border border-bordc bg-white text-xs font-semibold text-ink hover:bg-[#F1EEE2] transition">
+          <i data-lucide="file-text" class="w-3.5 h-3.5"></i> ดาวน์โหลดรายงาน (PDF)
+        </button>
+      </div>
+    </div>
+
+    <!-- ===== Hidden printable summary card — built + captured by exportSummaryAsImage() ===== -->
+    <div id="printSummaryWrap" style="position:absolute; left:-9999px; top:0;">
+      <div id="printSummaryCard" class="bg-cream text-ink" style="width:820px; padding:40px; font-family:-apple-system, 'Segoe UI', Sarabun, Arial, sans-serif;"></div>
     </div>
     <div id="bannerGrid" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 mb-8"></div>
 
@@ -1573,6 +1588,105 @@ function exportAllSummaryToCSV(){
   URL.revokeObjectURL(url);
 }
 window.exportAllSummaryToCSV = exportAllSummaryToCSV;
+
+/** ----- printable executive summary card (PNG / PDF) ----- */
+// ใช้ตัวเลขและ builder ชุดเดียวกับ exportAllSummaryToCSV เพื่อไม่ให้ตัวเลขเพี้ยนจากที่แสดงบนเว็บ
+// แต่ render เป็น HTML สวย ๆ แทน CSV แล้วค่อย capture ด้วย html2canvas
+function buildPrintSummaryHTML(){
+  const totalMou = ROWS.length;
+  const thaiOrgType = {}, cnOrgType = {};
+  ROWS.forEach(r=>{
+    if(r[COL.partyAth] && !(r[COL.partyAth] in thaiOrgType)) thaiOrgType[r[COL.partyAth]] = r[COL.typeA];
+    if(r[COL.partyBth] && !(r[COL.partyBth] in thaiOrgType)) thaiOrgType[r[COL.partyBth]] = r[COL.typeB];
+    if(r[COL.partyAch] && !(r[COL.partyAch] in cnOrgType)) cnOrgType[r[COL.partyAch]] = r[COL.typeAch];
+    if(r[COL.partyBch] && !(r[COL.partyBch] in cnOrgType)) cnOrgType[r[COL.partyBch]] = r[COL.typeBch];
+  });
+  const thaiTotal = Object.keys(thaiOrgType).length;
+  const cnTotal = Object.keys(cnOrgType).length;
+  const expiringCount = ROWS.filter(r => r[COL.status] === 'ใกล้หมดอายุ').length;
+
+  const kpiCard = (label, value, accentClass) => `
+    <div style="flex:1; background:#fff; border:1px solid #E2DDCE; border-radius:16px; padding:18px 20px;">
+      <p style="font-size:13px; color:#54534C; margin:0 0 8px;">${esc(label)}</p>
+      <p style="font-size:28px; font-weight:700; margin:0; color:${accentClass};">${fmt(value)}</p>
+    </div>`;
+
+  const kpiRow = `
+    <div style="display:flex; gap:14px; margin-bottom:28px;">
+      ${kpiCard('ความร่วมมือทั้งหมด', totalMou, '#242420')}
+      ${kpiCard('สถานศึกษาไทย', thaiTotal, '#242420')}
+      ${kpiCard('หน่วยงานต่างประเทศ', cnTotal, '#242420')}
+      ${kpiCard('ใกล้หมดอายุ', expiringCount, expiringCount>0 ? '#7A4E0A' : '#242420')}
+    </div>`;
+
+  // การ์ดรายละเอียดต่อ banner: หัวข้อสีตาม group เดิม + ตารางรายการ/ค่า
+  const sectionHtml = Object.keys(BANNER_GROUPS).map(groupKey => {
+    const g = BANNER_GROUPS[groupKey];
+    const groupAccent = { 'bg-blue-50':'#1E40AF', 'bg-teal-50':'#0F766E', 'bg-orange-50':'#C2410C' }[g.bg] || '#242420';
+    const items = BANNERS.filter(b => b.group === groupKey).map(b => {
+      const cfg = MODAL_BUILDERS[b.key](ROWS);
+      if(!cfg.labels || !cfg.values) return '';
+      const rows = cfg.labels.map((l,i) => `
+        <div style="display:flex; justify-content:space-between; padding:6px 0; border-bottom:1px solid #EFEBDE; font-size:13px;">
+          <span style="color:#54534C;">${esc(l)}</span>
+          <span style="font-weight:700; color:#0F172A;">${fmt(cfg.values[i])}</span>
+        </div>`).join('');
+      return `
+        <div style="background:#fff; border:1px solid #E2DDCE; border-radius:14px; padding:16px 18px; margin-bottom:12px;">
+          <p style="font-size:14px; font-weight:700; margin:0 0 8px; color:${groupAccent};">${esc(b.title)}</p>
+          ${rows}
+        </div>`;
+    }).join('');
+    return `
+      <p style="font-size:12px; font-weight:700; text-transform:uppercase; letter-spacing:.04em; color:#54534C; margin:22px 0 10px;">${esc(g.label)}</p>
+      ${items}`;
+  }).join('');
+
+  const today = new Date().toLocaleDateString('th-TH', { year:'numeric', month:'long', day:'numeric' });
+  return `
+    <div style="border-bottom:2px solid #2F5A16; padding-bottom:16px; margin-bottom:24px;">
+      <p style="font-size:13px; color:#54534C; margin:0 0 4px;">สำนักงานคณะกรรมการการอาชีวศึกษา</p>
+      <p style="font-size:20px; font-weight:700; margin:0 0 4px; color:#242420;">รายงานสรุปความร่วมมือ สอศ. – สาธารณรัฐประชาชนจีน</p>
+      <p style="font-size:12px; color:#9C9A8F; margin:0;">ข้อมูล ณ วันที่ ${today}</p>
+    </div>
+    ${kpiRow}
+    ${sectionHtml}
+  `;
+}
+
+function exportSummaryAsImage(kind){
+  // ป้องกันกรณีกดปุ่มก่อนข้อมูลจาก Google Sheets โหลดเสร็จ (ROWS จะยังว่างอยู่ ตัวเลขจะออกมาเป็น 0 ทั้งหมด)
+  if(!ROWS || ROWS.length === 0){
+    alert('ข้อมูลยังโหลดไม่เสร็จ กรุณารอสักครู่ (สังเกตว่าการ์ด KPI ด้านบนแสดงตัวเลขแล้ว) แล้วลองกดใหม่อีกครั้ง');
+    return;
+  }
+  const card = document.getElementById('printSummaryCard');
+  card.innerHTML = buildPrintSummaryHTML();
+
+  // รอ 1 เฟรมให้ browser วาด layout ให้เสร็จก่อน capture (สำคัญมากสำหรับ html2canvas)
+  requestAnimationFrame(() => {
+    html2canvas(card, { backgroundColor: '#F5F1E6', scale: 2 }).then(canvas => {
+      const dateStr = new Date().toISOString().slice(0,10);
+      if(kind === 'pdf'){
+        const { jsPDF } = window.jspdf;
+        const pdf = new jsPDF('p', 'pt', 'a4');
+        const pageWidth = pdf.internal.pageSize.getWidth();
+        const imgWidth = pageWidth - 40;
+        const imgHeight = canvas.height * (imgWidth / canvas.width);
+        pdf.addImage(canvas.toDataURL('image/png'), 'PNG', 20, 20, imgWidth, imgHeight);
+        pdf.save('รายงานสรุป-ความร่วมมือจีน-สอศ_' + dateStr + '.pdf');
+      } else {
+        const a = document.createElement('a');
+        a.href = canvas.toDataURL('image/png');
+        a.download = 'รายงานสรุป-ความร่วมมือจีน-สอศ_' + dateStr + '.png';
+        document.body.appendChild(a);
+        a.click();
+        document.body.removeChild(a);
+      }
+    });
+  });
+}
+window.exportSummaryAsImage = exportSummaryAsImage;
 
 document.getElementById('searchBox').addEventListener('input', (e) => {
   document.getElementById('filterIndicator').classList.add('hidden');
