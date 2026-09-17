@@ -1670,10 +1670,28 @@ function exportSummaryAsImage(kind){
       if(kind === 'pdf'){
         const { jsPDF } = window.jspdf;
         const pdf = new jsPDF('p', 'pt', 'a4');
+        const margin = 20;
         const pageWidth = pdf.internal.pageSize.getWidth();
-        const imgWidth = pageWidth - 40;
-        const imgHeight = canvas.height * (imgWidth / canvas.width);
-        pdf.addImage(canvas.toDataURL('image/png'), 'PNG', 20, 20, imgWidth, imgHeight);
+        const pageHeight = pdf.internal.pageSize.getHeight();
+        const imgWidth = pageWidth - margin * 2;
+        const imgHeight = canvas.height * (imgWidth / canvas.width); // ความสูงทั้งหมดของเนื้อหา ถ้าวาดที่ความกว้างนี้
+        const usableHeight = pageHeight - margin * 2; // พื้นที่ที่ใช้แสดงภาพได้ต่อ 1 หน้า
+        const imgData = canvas.toDataURL('image/png');
+
+        // เนื้อหายาวกว่า 1 หน้า A4 มาก จึงวางภาพเดิมซ้ำในแต่ละหน้า
+        // แล้วเลื่อนตำแหน่งขึ้นทีละหน้า เพื่อให้ส่วนที่ยังไม่เห็นเลื่อนเข้ามาในพื้นที่หน้าถัดไป
+        // (ส่วนที่เกินขอบหน้าแต่ละแผ่นจะถูก jsPDF ตัดออกให้เองโดยอัตโนมัติ)
+        let heightLeft = imgHeight;
+        let position = margin;
+        pdf.addImage(imgData, 'PNG', margin, position, imgWidth, imgHeight);
+        heightLeft -= usableHeight;
+
+        while(heightLeft > 0){
+          pdf.addPage();
+          position = margin - (imgHeight - heightLeft);
+          pdf.addImage(imgData, 'PNG', margin, position, imgWidth, imgHeight);
+          heightLeft -= usableHeight;
+        }
         pdf.save('รายงานสรุป-ความร่วมมือจีน-สอศ_' + dateStr + '.pdf');
       } else {
         const a = document.createElement('a');
